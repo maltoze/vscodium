@@ -26,6 +26,9 @@ node build/azure-pipelines/distro/mixin-npm
 
 npm run gulp "vscode-win32-${VSCODE_ARCH}-min-ci"
 
+# Package CLI binary into app
+../build/windows/package-cli.sh "${VSCODE_ARCH}" ".."
+
 . ../build_cli.sh
 
 if [[ "${VSCODE_ARCH}" == "x64" ]]; then
