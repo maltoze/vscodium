@@ -47,6 +47,9 @@
     "^https:\\/\\/github\\.com\\/[^/]+\\/[^/]+\\/(actions\\/)?workflows\\/.*badge\\.svg"
   ],
   "extensionEnabledApiProposals": {
+    "Anthropic.claude-code": [
+      "interactive"
+    ],
     "ms-azuretools.vscode-containers": [
       "authenticationChallenges"
     ],
@@ -578,6 +581,9 @@
     },
     "gruntfuggly.todo-tree": {
       "default": false
+    },
+    "Anthropic.claude-code": {
+      "default": true
     }
   }
 }

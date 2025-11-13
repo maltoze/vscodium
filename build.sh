@@ -33,6 +33,9 @@ if [[ "${SHOULD_BUILD}" == "yes" ]]; then
 
     find "../VSCode-darwin-${VSCODE_ARCH}" -print0 | xargs -0 touch -c
 
+    # Package CLI binary into app (pre-sign stage)
+    ../build/darwin/package-cli.sh "${VSCODE_ARCH}" ".."
+
     . ../build_cli.sh
 
     VSCODE_PLATFORM="darwin"
@@ -82,4 +85,9 @@ if [[ "${SHOULD_BUILD}" == "yes" ]]; then
   fi
 
   cd ..
+
+  # {{{ Install Claude Code extension to the packaged app
+  echo "Installing Claude Code extension to packaged application..."
+  ./install_extensions.sh || true
+  # }}}
 fi
