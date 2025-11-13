@@ -28,7 +28,7 @@ npm run gulp "vscode-win32-${VSCODE_ARCH}-min-ci"
 
 echo "Installing Claude Code extension to packaged application..."
 cd ..
-../install_extensions.sh
+./install_extensions.sh
 cd vscode
 
 # Package CLI binary into app
