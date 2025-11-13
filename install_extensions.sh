@@ -18,11 +18,13 @@ if [[ -d "VSCode-darwin-arm64" ]]; then
 elif [[ -d "VSCode-darwin-x64" ]]; then
   APP_PATH="VSCode-darwin-x64/VSCodium.app/Contents/Resources/app"
 elif [[ -d "VSCode-linux-x64" ]]; then
-  APP_PATH="VSCode-linux-x64"
+  APP_PATH="VSCode-linux-x64/resources/app"
 elif [[ -d "VSCode-linux-arm64" ]]; then
-  APP_PATH="VSCode-linux-arm64"
+  APP_PATH="VSCode-linux-arm64/resources/app"
 elif [[ -d "VSCode-win32-x64" ]]; then
-  APP_PATH="VSCode-win32-x64"
+  APP_PATH="VSCode-win32-x64/resources/app"
+elif [[ -d "VSCode-win32-arm64" ]]; then
+  APP_PATH="VSCode-win32-arm64/resources/app"
 else
   echo "Could not find compiled VSCode directory"
   exit 0
@@ -45,6 +47,8 @@ elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
   if [[ $(uname -m) == "arm64" ]]; then
     PLATFORM="win32-arm64"
   fi
+elif [[ $(uname -m) == "arm64" ]]; then
+  PLATFORM="linux-arm64"
 fi
 
 # Download URL for the specific platform
