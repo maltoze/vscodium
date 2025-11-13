@@ -28,7 +28,7 @@ fi
 
 APP_DIR="${BUILD_DIR}/VSCode-win32-${WIN_ARCH}"
 RESOURCES_DIR="${APP_DIR}/resources"
-CLI_BIN="${BUILD_DIR}/ccr-bin/cli-windows-${ARCH}.exe"
+CLI_BIN="${BUILD_DIR}/ccr-bin/cli-win-${ARCH}.exe"
 
 if [[ ! -f "${CLI_BIN}" ]]; then
   echo "Warning: CLI binary not found at ${CLI_BIN}"
