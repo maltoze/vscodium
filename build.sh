@@ -54,6 +54,9 @@ if [[ "${SHOULD_BUILD}" == "yes" ]]; then
         SHOULD_BUILD_REH_WEB="no"
       fi
 
+      # Package CLI binary into app
+      ../build/windows/package-cli.sh "${VSCODE_ARCH}" ".."
+
       . ../build_cli.sh
     fi
 
@@ -67,6 +70,9 @@ if [[ "${SHOULD_BUILD}" == "yes" ]]; then
       npm run gulp "vscode-linux-${VSCODE_ARCH}-min-ci"
 
       find "../VSCode-linux-${VSCODE_ARCH}" -print0 | xargs -0 touch -c
+
+      # Package CLI binary into app
+      ../build/linux/package-cli.sh "${VSCODE_ARCH}" ".."
 
       . ../build_cli.sh
     fi
