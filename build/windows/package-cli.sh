@@ -9,9 +9,9 @@ case "$ARCH" in
   x64)
     WIN_ARCH="x64"
     ;;
-  # x86)
-  #   WIN_ARCH="ia32"
-  #   ;;
+  x86)
+    WIN_ARCH="ia32"
+    ;;
   arm64)
     WIN_ARCH="arm64"
     ;;
@@ -101,58 +101,27 @@ function startCLIService(context) {
     }
 
     // Set environment variables
-    const env = { ...process.env };
-    env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
-    env.ANTHROPIC_AUTH_TOKEN = 'test';
-    env.ANTHROPIC_API_KEY = 'test';
-    env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+    process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
+    process.env.ANTHROPIC_AUTH_TOKEN = 'test';
+    process.env.ANTHROPIC_API_KEY = 'test';
+    process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
 
     // Start CLI service
     console.log('[Startup Claude] Starting CLI service...');
-    console.log('[Startup Claude] CLI binary path:', cliBinary);
-
-    try {
-        cliProcess = spawn(cliBinary, ['start'], {
-            detached: true,
-            stdio: 'ignore',
-            windowsHide: true
-        });
-
-        // Unref to allow parent process to exit independently
-        if (cliProcess.unref) {
-            cliProcess.unref();
-        }
-    } catch (err) {
-        console.error('[Startup Claude] Failed to spawn CLI process:', err);
-        return;
-    }
+    cliProcess = spawn(cliBinary, ['start'], {
+        detached: true,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env },
+        shell: true,
+        windowsHide: true
+    });
 
     // Write PID to file
     try {
         fs.writeFileSync(PID_FILE, cliProcess.pid.toString());
-        console.log('[Startup Claude] PID written to:', PID_FILE);
     } catch (err) {
         console.error('[Startup Claude] Error writing PID file:', err.message);
     }
-
-    // Handle process errors
-    cliProcess.on('error', (err) => {
-        console.error('[Startup Claude] CLI process error:', err);
-        try {
-            fs.appendFileSync(LOG_FILE, `[ERROR] Failed to start: ${err.message}\n`);
-        } catch (e) {}
-    });
-
-    cliProcess.on('exit', (code, signal) => {
-        console.log('[Startup Claude] CLI process exited with code:', code, 'signal:', signal);
-        try {
-            if (fs.existsSync(PID_FILE)) {
-                fs.unlinkSync(PID_FILE);
-            }
-        } catch (err) {
-            console.error('[Startup Claude] Error cleaning up PID file:', err.message);
-        }
-    });
 
     if (cliProcess.stdout) {
         cliProcess.stdout.on('data', (data) => {
