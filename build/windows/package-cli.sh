@@ -112,7 +112,6 @@ function startCLIService(context) {
         detached: true,
         stdio: ['ignore', 'pipe', 'pipe'],
         env: { ...process.env },
-        shell: true,
         windowsHide: true
     });
 
