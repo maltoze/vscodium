@@ -159,6 +159,8 @@ function startCLIService(context) {
     process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
     if (gitBashPath) {
         process.env.CLAUDE_CODE_GIT_BASH_PATH = gitBashPath;
+        const gitBashBinDir = path.dirname(gitBashPath);
+        process.env.PATH = gitBashBinDir + path.delimiter + (process.env.PATH || '');
     }
 
     // Start CLI service
