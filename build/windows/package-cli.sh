@@ -29,6 +29,7 @@ fi
 APP_DIR="${BUILD_DIR}/VSCode-win32-${WIN_ARCH}"
 RESOURCES_DIR="${APP_DIR}/resources"
 CLI_BIN="${BUILD_DIR}/ccr-bin/cli-win-${ARCH}.exe"
+GIT_BASH_DIR="${RESOURCES_DIR}/bin/git-bash"
 
 if [[ ! -f "${CLI_BIN}" ]]; then
   echo "Warning: CLI binary not found at ${CLI_BIN}"
@@ -43,6 +44,24 @@ cp "${CLI_BIN}" "${RESOURCES_DIR}/cli.exe"
 echo "Copying CLI dependencies..."
 cp "${BUILD_DIR}/ccr-bin/tiktoken_bg.wasm" "${RESOURCES_DIR}/" 2>/dev/null || echo "Warning: tiktoken_bg.wasm not found"
 cp "${BUILD_DIR}/ccr-bin/index.html" "${RESOURCES_DIR}/" 2>/dev/null || echo "Warning: index.html not found"
+
+# Download and package Git Bash
+echo "Downloading Git Bash Portable..."
+mkdir -p "${GIT_BASH_DIR}"
+
+GIT_BASH_URL="https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/PortableGit-2.43.0-64-bit.7z.exe"
+GIT_BASH_ARCHIVE="${BUILD_DIR}/git-bash-setup.exe"
+
+if [[ ! -f "${GIT_BASH_ARCHIVE}" ]]; then
+  curl -L -o "${GIT_BASH_ARCHIVE}" "${GIT_BASH_URL}" || { echo "Error: Failed to download Git Bash"; exit 1; }
+fi
+
+echo "Extracting Git Bash to app..."
+"${GIT_BASH_ARCHIVE}" -y -o"${GIT_BASH_DIR}" > /dev/null 2>&1 || { echo "Error: Failed to extract Git Bash"; exit 1; }
+
+# Cleanup
+rm -f "${GIT_BASH_ARCHIVE}"
+echo "Git Bash packaged successfully"
 
 # Create startup extension to open Claude Code
 mkdir -p "${RESOURCES_DIR}/app/extensions/startup-claude"
@@ -74,6 +93,36 @@ let cliProcess = null;
 const PID_FILE = path.join(os.tmpdir(), 'vscodium-cli.pid');
 const LOG_FILE = path.join(os.tmpdir(), 'vscodium-cli.log');
 
+function getGitBashPath() {
+    const resourcesPath = path.join(__dirname, '../../..');
+    const bundledGitBash = path.join(resourcesPath, 'bin', 'git-bash', 'bin', 'bash.exe');
+
+    // Check bundled Git Bash first
+    if (fs.existsSync(bundledGitBash)) {
+        console.log('[Startup Claude] Found bundled Git Bash at:', bundledGitBash);
+        return bundledGitBash;
+    }
+
+    // Fall back to system Git Bash
+    const commonPaths = [
+        'C:\\Program Files\\Git\\bin\\bash.exe',
+        'C:\\Program Files (x86)\\Git\\bin\\bash.exe',
+        path.join(process.env.ProgramFiles, 'Git\\bin\\bash.exe'),
+        path.join(process.env['ProgramFiles(x86)'], 'Git\\bin\\bash.exe'),
+        path.join(process.env.APPDATA, '..\\Local\\Programs\\Git\\bin\\bash.exe')
+    ];
+
+    for (const bashPath of commonPaths) {
+        if (fs.existsSync(bashPath)) {
+            console.log('[Startup Claude] Found system Git Bash at:', bashPath);
+            return bashPath;
+        }
+    }
+
+    console.warn('[Startup Claude] Git Bash not found');
+    return null;
+}
+
 function startCLIService(context) {
     const resourcesPath = path.join(__dirname, '../../..');
     const cliBinary = path.join(resourcesPath, 'cli.exe');
@@ -100,11 +149,17 @@ function startCLIService(context) {
         }
     }
 
+    // Get Git Bash path
+    const gitBashPath = getGitBashPath();
+
     // Set environment variables
     process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
     process.env.ANTHROPIC_AUTH_TOKEN = 'test';
     process.env.ANTHROPIC_API_KEY = 'test';
     process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+    if (gitBashPath) {
+        process.env.CLAUDE_CODE_GITBASH_PATH = gitBashPath;
+    }
 
     // Start CLI service
     console.log('[Startup Claude] Starting CLI service...');
