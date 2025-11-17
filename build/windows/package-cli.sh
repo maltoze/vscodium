@@ -152,15 +152,19 @@ function startCLIService(context) {
     // Get Git Bash path
     const gitBashPath = getGitBashPath();
 
-    // Set environment variables
-    process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
-    process.env.ANTHROPIC_AUTH_TOKEN = 'test';
-    process.env.ANTHROPIC_API_KEY = 'test';
-    process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+    // Build complete environment with all variables
+    const env = Object.assign({}, process.env);
+    env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
+    env.ANTHROPIC_AUTH_TOKEN = 'test';
+    env.ANTHROPIC_API_KEY = 'test';
+    env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+
     if (gitBashPath) {
-        process.env.CLAUDE_CODE_GIT_BASH_PATH = gitBashPath;
         const gitBashBinDir = path.dirname(gitBashPath);
-        process.env.PATH = gitBashBinDir + path.delimiter + (process.env.PATH || '');
+        env.PATH = gitBashBinDir + path.delimiter + (env.PATH || '');
+        env.CLAUDE_CODE_GIT_BASH_PATH = gitBashPath;
+        console.log('[Startup Claude] Git Bash bin dir added to PATH:', gitBashBinDir);
+        console.log('[Startup Claude] CLAUDE_CODE_GIT_BASH_PATH set to:', gitBashPath);
     }
 
     // Start CLI service
@@ -168,7 +172,7 @@ function startCLIService(context) {
     cliProcess = spawn(cliBinary, ['start'], {
         detached: true,
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env },
+        env: env,
         windowsHide: true
     });
 
