@@ -36,7 +36,7 @@ if [[ "${SHOULD_BUILD}" == "yes" ]]; then
     # Package CLI binary into app (pre-sign stage)
     ../build/darwin/package-cli.sh "${VSCODE_ARCH}" ".."
 
-    . ../build_cli.sh
+    # . ../build_cli.sh
 
     VSCODE_PLATFORM="darwin"
   elif [[ "${OS_NAME}" == "windows" ]]; then
@@ -57,7 +57,7 @@ if [[ "${SHOULD_BUILD}" == "yes" ]]; then
       # Package CLI binary into app
       ../build/windows/package-cli.sh "${VSCODE_ARCH}" ".."
 
-      . ../build_cli.sh
+      # . ../build_cli.sh
     fi
 
     VSCODE_PLATFORM="win32"
@@ -74,7 +74,7 @@ if [[ "${SHOULD_BUILD}" == "yes" ]]; then
       # Package CLI binary into app
       ../build/linux/package-cli.sh "${VSCODE_ARCH}" ".."
 
-      . ../build_cli.sh
+      # . ../build_cli.sh
     fi
 
     VSCODE_PLATFORM="linux"

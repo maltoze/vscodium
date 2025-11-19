@@ -43,7 +43,7 @@ setpath "product" "keyboardShortcutsUrlLinux" "https://go.microsoft.com/fwlink/?
 setpath "product" "keyboardShortcutsUrlMac" "https://go.microsoft.com/fwlink/?linkid=832143"
 setpath "product" "keyboardShortcutsUrlWin" "https://go.microsoft.com/fwlink/?linkid=832145"
 setpath "product" "licenseUrl" "https://github.com/VSCodium/vscodium/blob/master/LICENSE"
-setpath_json "product" "linkProtectionTrustedDomains" '["https://open-vsx.org"]'
+setpath_json "product" "linkProtectionTrustedDomains" '["https://open-vsx.org", "https://*.deployai365.com", "https://*.google.com"]'
 setpath "product" "releaseNotesUrl" "https://go.microsoft.com/fwlink/?LinkID=533483#vscode"
 setpath "product" "reportIssueUrl" "https://github.com/VSCodium/vscodium/issues/new"
 setpath "product" "requestFeatureUrl" "https://go.microsoft.com/fwlink/?LinkID=533482"
