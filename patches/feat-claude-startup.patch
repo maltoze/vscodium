@@ -444,7 +444,7 @@ index 00000000000..2d88f9d31c8
 +		const token = this.storageService.get(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
 +		if (token) {
 +			// Check if user needs to subscribe before hiding splash
-+			if (typeof this.totalAmount === 'number' && this.totalAmount <= 1) {
++			if (typeof this.totalAmount === 'number' && this.totalAmount <= 0) {
 +				this.showInsufficientBalanceDialog(token);
 +			}
 +			this.hideSplash();
@@ -627,7 +627,7 @@ index 00000000000..2d88f9d31c8
 +				this.totalAmount = data?.data?.total_amount;
 +
 +				// Check if user needs to subscribe
-+				if (typeof this.totalAmount === 'number' && this.totalAmount <= 1) {
++				if (typeof this.totalAmount === 'number' && this.totalAmount <= 0) {
 +					this.showInsufficientBalanceDialog(token);
 +				}
 +			}
