@@ -1,6 +1,6 @@
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.contribution.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.contribution.ts
 new file mode 100644
-index 0000000..5d84807
+index 00000000000..5d848074744
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.contribution.ts
 @@ -0,0 +1,28 @@
@@ -34,10 +34,10 @@ index 0000000..5d84807
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 0000000..8486ddd
+index 00000000000..ba01da538db
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,642 @@
+@@ -0,0 +1,798 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -47,9 +47,23 @@ index 0000000..8486ddd
 +import { IWorkbenchContribution } from '../../../common/contributions.js';
 +import { IWorkbenchLayoutService } from '../../../services/layout/browser/layoutService.js';
 +import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
++import { IOpenerService } from '../../../../platform/opener/common/opener.js';
++import { IURLHandler, IURLService } from '../../../../platform/url/common/url.js';
++import { URI } from '../../../../base/common/uri.js';
 +import { addDisposableListener, EventType, getWindow } from '../../../../base/browser/dom.js';
++import { IFileService } from '../../../../platform/files/common/files.js';
++import { VSBuffer } from '../../../../base/common/buffer.js';
++import { IPathService } from '../../../services/path/common/pathService.js';
++import { isWindows } from '../../../../base/common/platform.js';
 +
 +const LANGUAGE_STORAGE_KEY = 'workbench.startupSplash.language';
++const TOKEN_STORAGE_KEY = 'deployai365.auth.token';
++const SUB_KEY_STORAGE_KEY = 'deployai365.auth.subKey';
++const CALLBACK_AUTHORITY = 'deployai365.auth';
++const CALLBACK_PATH = '/callback';
++const CALLBACK_SCHEME = 'vscodium';
++const INSTANCE_ID = 'deepsitet62401065';
++const API_ENDPOINT = 'https://modelproxy-api.deployai365.com/api/key/get_or_create_sub_key';
 +
 +export class StartupSplashContribution extends Disposable implements IWorkbenchContribution {
 +
@@ -63,6 +77,10 @@ index 0000000..8486ddd
 +	constructor(
 +		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
 +		@IStorageService private readonly storageService: IStorageService,
++		@IOpenerService private readonly openerService: IOpenerService,
++		@IURLService private readonly urlService: IURLService,
++		@IFileService private readonly fileService: IFileService,
++		@IPathService private readonly pathService: IPathService,
 +	) {
 +		super();
 +		this.init();
@@ -72,6 +90,7 @@ index 0000000..8486ddd
 +		const savedLanguage = this.storageService.get(LANGUAGE_STORAGE_KEY, StorageScope.APPLICATION);
 +		this.currentLang = savedLanguage || 'zh';
 +
++		this.registerUrlHandler();
 +		this.showSplash();
 +	}
 +
@@ -249,6 +268,7 @@ index 0000000..8486ddd
 +		this.applyStyles();
 +		this.createStars();
 +		this.addEventListeners();
++		this.updateLoginStatus();
 +		this.setupCarousel();
 +	}
 +
@@ -358,6 +378,13 @@ index 0000000..8486ddd
 +			}));
 +		}
 +
++		const loginStatus = this.splashContainer.querySelector('#loginStatus') as HTMLElement;
++		if (loginStatus) {
++			this._register(addDisposableListener(loginStatus, EventType.CLICK, () => {
++				this.triggerLoginIfNeeded();
++			}));
++		}
++
 +		const targetWindow = getWindow(this.splashContainer);
 +		this._register(addDisposableListener(targetWindow.document, EventType.KEY_DOWN, (e: KeyboardEvent) => {
 +			if (e.key === 'Enter' || e.key === ' ') {
@@ -390,7 +417,23 @@ index 0000000..8486ddd
 +	}
 +
 +	private handleStartButtonClick(): void {
-+		this.hideSplash();
++		const token = this.storageService.get(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
++		if (token) {
++			this.hideSplash();
++			return;
++		}
++		this.triggerLoginIfNeeded();
++	}
++
++	private triggerLoginIfNeeded(): void {
++		const token = this.storageService.get(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
++		if (token) {
++			this.updateLoginStatus();
++			return;
++		}
++		const callback = URI.from({ scheme: CALLBACK_SCHEME, authority: CALLBACK_AUTHORITY, path: CALLBACK_PATH });
++		const loginUrl = `https://login.deployai365.com/?platform=cline&originUrl=${encodeURIComponent(callback.toString())}`;
++		this.openerService.open(URI.parse(loginUrl), { openExternal: true });
 +	}
 +
 +	private hideSplash(): void {
@@ -409,6 +452,119 @@ index 0000000..8486ddd
 +			}
 +			this.splashContainer = undefined;
 +		}, 300);
++	}
++
++	private updateLoginStatus(): void {
++		if (!this.splashContainer) {
++			return;
++		}
++		const token = this.storageService.get(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
++		const statusZh = this.splashContainer.querySelector('#loginStatus .lang-zh') as HTMLElement | null;
++		const statusEn = this.splashContainer.querySelector('#loginStatus .lang-en') as HTMLElement | null;
++		const hintZh = this.splashContainer.querySelector('#loginStatus .login-hint.lang-zh') as HTMLElement | null;
++		const hintEn = this.splashContainer.querySelector('#loginStatus .login-hint.lang-en') as HTMLElement | null;
++		if (token) {
++			if (statusZh) { statusZh.textContent = '已登录'; }
++			if (statusEn) { statusEn.textContent = 'Logged in'; }
++			if (hintZh) { hintZh.style.display = 'none'; }
++			if (hintEn) { hintEn.style.display = 'none'; }
++		} else {
++			if (statusZh) { statusZh.textContent = '未登录'; }
++			if (statusEn) { statusEn.textContent = 'Not logged in'; }
++			if (hintZh) { hintZh.style.display = this.currentLang === 'zh' ? '' : 'none'; }
++			if (hintEn) { hintEn.style.display = this.currentLang === 'en' ? '' : 'none'; }
++		}
++	}
++
++	private registerUrlHandler(): void {
++		const handler: IURLHandler = {
++			handleURL: async (uri: URI) => {
++				if (uri.scheme !== CALLBACK_SCHEME) {
++					return false;
++				}
++				if (uri.authority !== CALLBACK_AUTHORITY || uri.path !== CALLBACK_PATH) {
++					return false;
++				}
++				const params = new URLSearchParams(uri.query ?? '');
++				const token = params.get('token');
++				if (token) {
++					this.storageService.store(TOKEN_STORAGE_KEY, token, StorageScope.APPLICATION, StorageTarget.MACHINE);
++					await this.fetchAndSaveSubKey(token);
++					this.updateLoginStatus();
++					this.hideSplash();
++					return true;
++				}
++				return false;
++			}
++		};
++		this._register(this.urlService.registerHandler(handler));
++	}
++
++	private async fetchAndSaveSubKey(token: string): Promise<void> {
++		try {
++			const response = await fetch(API_ENDPOINT, {
++				method: 'POST',
++				headers: {
++					'Authorization': `Bearer ${token}`,
++					'Content-Type': 'application/json'
++				},
++				body: JSON.stringify({
++					instance_id: INSTANCE_ID
++				})
++			});
++
++			if (!response.ok) {
++				console.error('Failed to fetch sub key:', response.statusText);
++				return;
++			}
++
++			const data = await response.json();
++			const subKey = data?.data?.sub_key;
++			if (subKey) {
++				this.storageService.store(SUB_KEY_STORAGE_KEY, subKey, StorageScope.APPLICATION, StorageTarget.MACHINE);
++				await this.updateConfigFile(subKey);
++			}
++		} catch (error) {
++			console.error('Error fetching sub key:', error);
++		}
++	}
++
++	private async updateConfigFile(subKey: string): Promise<void> {
++		try {
++			const configPath = await this.getConfigPath();
++			let config: any = { Providers: [{ api_key: '' }] };
++
++			try {
++				const content = await this.fileService.readFile(URI.file(configPath));
++				config = JSON.parse(content.value.toString());
++			} catch (e) {
++				// File doesn't exist yet, use default config
++			}
++
++			if (!config.Providers) {
++				config.Providers = [];
++			}
++			if (!config.Providers[0]) {
++				config.Providers[0] = {};
++			}
++
++			config.Providers[0].api_key = subKey;
++
++			const content = VSBuffer.fromString(JSON.stringify(config, null, 2));
++			await this.fileService.writeFile(URI.file(configPath), content);
++			console.log('Config file updated successfully');
++		} catch (error) {
++			console.error('Error updating config file:', error);
++		}
++	}
++
++	private async getConfigPath(): Promise<string> {
++		const userHome = await this.pathService.userHome();
++		const homedir = userHome.fsPath;
++		if (isWindows) {
++			return `${homedir}\\.claude-code-router\\config.json`;
++		}
++		return `${homedir}/.claude-code-router/config.json`;
 +	}
 +
 +	private applyStyles(): void {
@@ -681,7 +837,7 @@ index 0000000..8486ddd
 +	}
 +}
 diff --git a/src/vs/workbench/workbench.common.main.ts b/src/vs/workbench/workbench.common.main.ts
-index 61d63db..6d6ef00 100644
+index 61d63db7b73..6d6ef004bb7 100644
 --- a/src/vs/workbench/workbench.common.main.ts
 +++ b/src/vs/workbench/workbench.common.main.ts
 @@ -426,2 +426,5 @@ import './contrib/editTelemetry/browser/editTelemetry.contribution.js';
