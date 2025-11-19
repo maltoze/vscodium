@@ -1,3 +1,63 @@
+diff --git a/src/vs/platform/native/common/native.ts b/src/vs/platform/native/common/native.ts
+index 43729958372..b0154bd9244 100644
+--- a/src/vs/platform/native/common/native.ts
++++ b/src/vs/platform/native/common/native.ts
+@@ -231,2 +231,5 @@ export interface ICommonNativeHostService {
+ 	windowsGetStringRegKey(hive: 'HKEY_CURRENT_USER' | 'HKEY_LOCAL_MACHINE' | 'HKEY_CLASSES_ROOT' | 'HKEY_USERS' | 'HKEY_CURRENT_CONFIG', path: string, name: string): Promise<string | undefined>;
++
++	// Claude Code Router CLI
++	restartClaudeCodeRouterCli(): Promise<void>;
+ }
+diff --git a/src/vs/platform/native/electron-main/nativeHostMainService.ts b/src/vs/platform/native/electron-main/nativeHostMainService.ts
+index 8cb60a057b8..8b7c0172001 100644
+--- a/src/vs/platform/native/electron-main/nativeHostMainService.ts
++++ b/src/vs/platform/native/electron-main/nativeHostMainService.ts
+@@ -1155,2 +1155,45 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
+ 	}
++
++	async restartClaudeCodeRouterCli(): Promise<void> {
++		const { spawn } = await import('child_process');
++
++		// Get CLI path based on platform and appRoot
++		let cliPath: string;
++		if (isMacintosh) {
++			// appRoot: /path/to/VSCodium.app/Contents/Resources/app
++			// cli: /path/to/VSCodium.app/Contents/Resources/cli
++			const resourcesPath = join(this.environmentMainService.appRoot, '..');
++			cliPath = join(resourcesPath, 'cli');
++		} else if (isWindows) {
++			// appRoot: C:\\...\\VSCodium\\resources\\app
++			// cli: C:\\...\\VSCodium\\resources\\cli.exe
++			const resourcesPath = join(this.environmentMainService.appRoot, '..');
++			cliPath = join(resourcesPath, 'cli.exe');
++		} else {
++			// Linux: appRoot: /usr/share/vscodium/resources/app
++			// cli: /usr/share/vscodium/resources/cli
++			const resourcesPath = join(this.environmentMainService.appRoot, '..');
++			cliPath = join(resourcesPath, 'cli');
++		}
++
++		// Check if CLI exists
++		if (!fs.existsSync(cliPath)) {
++			this.logService.warn(`Claude Code Router CLI not found at: ${cliPath}`);
++			return;
++		}
++
++		this.logService.info(`Restarting Claude Code Router CLI at: ${cliPath}`);
++
++		// Execute CLI restart command
++		try {
++			const child = spawn(cliPath, ['restart'], {
++				detached: true,
++				stdio: 'ignore'
++			});
++			child.unref();
++			this.logService.info('Claude Code Router CLI restart command executed successfully');
++		} catch (error) {
++			this.logService.error('Failed to restart Claude Code Router CLI:', error);
++		}
++	}
+ }
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.contribution.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.contribution.ts
 new file mode 100644
 index 00000000000..5d848074744
@@ -34,10 +94,10 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..2d88f9d31c8
+index 00000000000..5cac55b6da7
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,946 @@
+@@ -0,0 +1,951 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -56,6 +116,7 @@ index 00000000000..2d88f9d31c8
 +import { IPathService } from '../../../services/path/common/pathService.js';
 +import { isWindows } from '../../../../base/common/platform.js';
 +import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
++import { INativeHostService } from '../../../../platform/native/common/native.js';
 +
 +const LANGUAGE_STORAGE_KEY = 'workbench.startupSplash.language';
 +const TOKEN_STORAGE_KEY = 'deployai365.auth.token';
@@ -87,6 +148,7 @@ index 00000000000..2d88f9d31c8
 +		@IFileService private readonly fileService: IFileService,
 +		@IPathService private readonly pathService: IPathService,
 +		@IDialogService private readonly dialogService: IDialogService,
++		@INativeHostService private readonly nativeHostService: INativeHostService,
 +	) {
 +		super();
 +		this.init();
@@ -689,6 +751,9 @@ index 00000000000..2d88f9d31c8
 +			const content = VSBuffer.fromString(JSON.stringify(config, null, 2));
 +			await this.fileService.writeFile(URI.file(configPath), content);
 +			console.log('Config file updated successfully');
++
++			// Restart Claude Code Router CLI
++			await this.nativeHostService.restartClaudeCodeRouterCli();
 +		} catch (error) {
 +			console.error('Error updating config file:', error);
 +		}
