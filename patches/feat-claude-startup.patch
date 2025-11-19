@@ -34,10 +34,10 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..ba01da538db
+index 00000000000..2d88f9d31c8
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,798 @@
+@@ -0,0 +1,946 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -55,6 +55,7 @@ index 00000000000..ba01da538db
 +import { VSBuffer } from '../../../../base/common/buffer.js';
 +import { IPathService } from '../../../services/path/common/pathService.js';
 +import { isWindows } from '../../../../base/common/platform.js';
++import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 +
 +const LANGUAGE_STORAGE_KEY = 'workbench.startupSplash.language';
 +const TOKEN_STORAGE_KEY = 'deployai365.auth.token';
@@ -64,6 +65,7 @@ index 00000000000..ba01da538db
 +const CALLBACK_SCHEME = 'vscodium';
 +const INSTANCE_ID = 'deepsitet62401065';
 +const API_ENDPOINT = 'https://modelproxy-api.deployai365.com/api/key/get_or_create_sub_key';
++const USER_INFO_API = `https://launch-api.deployai365.com/api/work-user/${INSTANCE_ID}`;
 +
 +export class StartupSplashContribution extends Disposable implements IWorkbenchContribution {
 +
@@ -73,6 +75,9 @@ index 00000000000..ba01da538db
 +	private currentLang = 'zh';
 +	private currentSlide = 0;
 +	private carouselInterval: any;
++	private userName: string | undefined;
++	private totalAmount: number | undefined;
++	private isLoadingUserInfo = false;
 +
 +	constructor(
 +		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
@@ -81,6 +86,7 @@ index 00000000000..ba01da538db
 +		@IURLService private readonly urlService: IURLService,
 +		@IFileService private readonly fileService: IFileService,
 +		@IPathService private readonly pathService: IPathService,
++		@IDialogService private readonly dialogService: IDialogService,
 +	) {
 +		super();
 +		this.init();
@@ -213,6 +219,19 @@ index 00000000000..ba01da538db
 +		startButton.appendChild(btnTextZh);
 +		startButton.appendChild(btnTextEn);
 +		startButton.appendChild(arrowIcon);
++
++		// Initialize button state based on token
++		const token = this.storageService.get(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
++		if (token) {
++			// If has token, set loading state initially
++			this.isLoadingUserInfo = true;
++			startButton.disabled = true;
++			startButton.classList.add('loading');
++			btnTextZh.textContent = '加载中...';
++			btnTextEn.textContent = 'Loading...';
++			arrowIcon.style.display = 'none';
++		}
++
 +		splashContent.appendChild(startButton);
 +
 +		// Status info
@@ -417,8 +436,17 @@ index 00000000000..ba01da538db
 +	}
 +
 +	private handleStartButtonClick(): void {
++		// Prevent action if still loading user info
++		if (this.isLoadingUserInfo) {
++			return;
++		}
++
 +		const token = this.storageService.get(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
 +		if (token) {
++			// Check if user needs to subscribe before hiding splash
++			if (typeof this.totalAmount === 'number' && this.totalAmount <= 1) {
++				this.showInsufficientBalanceDialog(token);
++			}
 +			this.hideSplash();
 +			return;
 +		}
@@ -454,7 +482,7 @@ index 00000000000..ba01da538db
 +		}, 300);
 +	}
 +
-+	private updateLoginStatus(): void {
++	private async updateLoginStatus(): Promise<void> {
 +		if (!this.splashContainer) {
 +			return;
 +		}
@@ -463,9 +491,71 @@ index 00000000000..ba01da538db
 +		const statusEn = this.splashContainer.querySelector('#loginStatus .lang-en') as HTMLElement | null;
 +		const hintZh = this.splashContainer.querySelector('#loginStatus .login-hint.lang-zh') as HTMLElement | null;
 +		const hintEn = this.splashContainer.querySelector('#loginStatus .login-hint.lang-en') as HTMLElement | null;
++		const startButton = this.splashContainer.querySelector('#startButton') as HTMLButtonElement | null;
++		const btnTextZh = startButton?.querySelector('.lang-zh') as HTMLElement | null;
++		const btnTextEn = startButton?.querySelector('.lang-en') as HTMLElement | null;
++		const arrowIcon = startButton?.querySelector('.arrow-icon') as HTMLElement | null;
++
 +		if (token) {
-+			if (statusZh) { statusZh.textContent = '已登录'; }
-+			if (statusEn) { statusEn.textContent = 'Logged in'; }
++			this.isLoadingUserInfo = true;
++			if (startButton) {
++				startButton.disabled = true;
++				startButton.classList.add('loading');
++			}
++			if (btnTextZh) { btnTextZh.textContent = '加载中...'; }
++			if (btnTextEn) { btnTextEn.textContent = 'Loading...'; }
++			if (arrowIcon) { arrowIcon.style.display = 'none'; }
++
++			// Fetch user info
++			try {
++				const response = await fetch(USER_INFO_API, {
++					headers: {
++						'Authorization': `Bearer ${token}`
++					}
++				});
++
++				if (response.status === 401) {
++					// Token invalid, trigger login
++					this.storageService.remove(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
++					const callback = URI.from({ scheme: CALLBACK_SCHEME, authority: CALLBACK_AUTHORITY, path: CALLBACK_PATH });
++					const loginUrl = `https://login.deployai365.com/?platform=cline&originUrl=${encodeURIComponent(callback.toString())}`;
++					this.openerService.open(URI.parse(loginUrl), { openExternal: true });
++					return;
++				}
++
++				if (response.ok) {
++					const data = await response.json();
++					console.log('user info response:', data, JSON.stringify(data));
++					this.userName = data?.data?.user_name;
++					this.totalAmount = data?.data?.total_amount;
++
++					if (this.userName) {
++						if (statusZh) { statusZh.textContent = this.userName; }
++						if (statusEn) { statusEn.textContent = this.userName; }
++					} else {
++						if (statusZh) { statusZh.textContent = '已登录'; }
++						if (statusEn) { statusEn.textContent = 'Logged in'; }
++					}
++				} else {
++					if (statusZh) { statusZh.textContent = '已登录'; }
++					if (statusEn) { statusEn.textContent = 'Logged in'; }
++				}
++			} catch (error) {
++				console.error('Error fetching user info:', error);
++				if (statusZh) { statusZh.textContent = '已登录'; }
++				if (statusEn) { statusEn.textContent = 'Logged in'; }
++			}
++
++			// Remove loading state after fetch completes
++			this.isLoadingUserInfo = false;
++			if (startButton) {
++				startButton.disabled = false;
++				startButton.classList.remove('loading');
++			}
++			if (btnTextZh) { btnTextZh.textContent = '启动 Claude Code'; }
++			if (btnTextEn) { btnTextEn.textContent = 'Launch Claude Code'; }
++			if (arrowIcon) { arrowIcon.style.display = ''; }
++
 +			if (hintZh) { hintZh.style.display = 'none'; }
 +			if (hintEn) { hintEn.style.display = 'none'; }
 +		} else {
@@ -490,6 +580,8 @@ index 00000000000..ba01da538db
 +				if (token) {
 +					this.storageService.store(TOKEN_STORAGE_KEY, token, StorageScope.APPLICATION, StorageTarget.MACHINE);
 +					await this.fetchAndSaveSubKey(token);
++					// Check user info and total_amount after login
++					await this.checkUserAndSubscription(token);
 +					this.updateLoginStatus();
 +					this.hideSplash();
 +					return true;
@@ -498,6 +590,50 @@ index 00000000000..ba01da538db
 +			}
 +		};
 +		this._register(this.urlService.registerHandler(handler));
++	}
++
++	private showInsufficientBalanceDialog(token: string): void {
++		const message = this.currentLang === 'zh'
++			? '余额不足，请充值'
++			: 'Insufficient balance, please recharge';
++		const detail = this.currentLang === 'zh'
++			? '您的账户余额不足，点击确定前往充值页面。'
++			: 'Your account balance is insufficient. Click OK to go to the recharge page.';
++
++		this.dialogService.confirm({
++			message,
++			detail,
++			primaryButton: this.currentLang === 'zh' ? '确定' : 'OK',
++			cancelButton: this.currentLang === 'zh' ? '取消' : 'Cancel'
++		}).then(result => {
++			if (result.confirmed) {
++				const subscriptionUrl = `https://deployai365.com/subscription-plans?serviceType=depcoder&instanceId=${INSTANCE_ID}&token=${encodeURIComponent(token)}&successUrl=${encodeURIComponent('vscodium://')}`;
++				this.openerService.open(URI.parse(subscriptionUrl), { openExternal: true });
++			}
++		});
++	}
++
++	private async checkUserAndSubscription(token: string): Promise<void> {
++		try {
++			const response = await fetch(USER_INFO_API, {
++				headers: {
++					'Authorization': `Bearer ${token}`
++				}
++			});
++
++			if (response.ok) {
++				const data = await response.json();
++				this.userName = data?.data?.user_name;
++				this.totalAmount = data?.data?.total_amount;
++
++				// Check if user needs to subscribe
++				if (typeof this.totalAmount === 'number' && this.totalAmount <= 1) {
++					this.showInsufficientBalanceDialog(token);
++				}
++			}
++		} catch (error) {
++			console.error('Error checking user subscription:', error);
++		}
 +	}
 +
 +	private async fetchAndSaveSubKey(token: string): Promise<void> {
@@ -789,6 +925,18 @@ index 00000000000..ba01da538db
 +			.start-button:hover {
 +				transform: translateY(-3px);
 +				box-shadow: 0 10px 30px rgba(217, 119, 87, 0.6);
++			}
++
++			.start-button:disabled,
++			.start-button.loading {
++				opacity: 0.6;
++				cursor: not-allowed;
++			}
++
++			.start-button:disabled:hover,
++			.start-button.loading:hover {
++				transform: none;
++				box-shadow: 0 0 25px rgba(217, 119, 87, 0.5);
 +			}
 +
 +			.arrow-icon {
