@@ -94,7 +94,7 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..5cac55b6da7
+index 00000000000..1767af8477a
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 @@ -0,0 +1,951 @@
@@ -116,7 +116,7 @@ index 00000000000..5cac55b6da7
 +import { IPathService } from '../../../services/path/common/pathService.js';
 +import { isWindows } from '../../../../base/common/platform.js';
 +import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
-+import { INativeHostService } from '../../../../platform/native/common/native.js';
++import { IHostService } from '../../../services/host/browser/host.js';
 +
 +const LANGUAGE_STORAGE_KEY = 'workbench.startupSplash.language';
 +const TOKEN_STORAGE_KEY = 'deployai365.auth.token';
@@ -148,7 +148,7 @@ index 00000000000..5cac55b6da7
 +		@IFileService private readonly fileService: IFileService,
 +		@IPathService private readonly pathService: IPathService,
 +		@IDialogService private readonly dialogService: IDialogService,
-+		@INativeHostService private readonly nativeHostService: INativeHostService,
++		@IHostService private readonly hostService: IHostService,
 +	) {
 +		super();
 +		this.init();
@@ -753,7 +753,7 @@ index 00000000000..5cac55b6da7
 +			console.log('Config file updated successfully');
 +
 +			// Restart Claude Code Router CLI
-+			await this.nativeHostService.restartClaudeCodeRouterCli();
++			await this.hostService.restartClaudeCodeRouterCli();
 +		} catch (error) {
 +			console.error('Error updating config file:', error);
 +		}
@@ -1049,6 +1049,37 @@ index 00000000000..5cac55b6da7
 +		targetWindow.document.head.appendChild(style);
 +	}
 +}
+diff --git a/src/vs/workbench/services/host/browser/host.ts b/src/vs/workbench/services/host/browser/host.ts
+index f83c4b79e84..f1f1108188f 100644
+--- a/src/vs/workbench/services/host/browser/host.ts
++++ b/src/vs/workbench/services/host/browser/host.ts
+@@ -139,2 +139,11 @@ export interface IHostService {
+ 	//#endregion
++
++	//#region Claude Code Router CLI
++
++	/**
++	 * Restart Claude Code Router CLI
++	 */
++	restartClaudeCodeRouterCli(): Promise<void>;
++
++	//#endregion
+ }
+diff --git a/src/vs/workbench/services/host/electron-browser/nativeHostService.ts b/src/vs/workbench/services/host/electron-browser/nativeHostService.ts
+index cb7dcc810e2..3330db66a12 100644
+--- a/src/vs/workbench/services/host/electron-browser/nativeHostService.ts
++++ b/src/vs/workbench/services/host/electron-browser/nativeHostService.ts
+@@ -212,2 +212,10 @@ class WorkbenchHostService extends Disposable implements IHostService {
+ 	//#endregion
++
++	//#region Claude Code Router CLI
++
++	restartClaudeCodeRouterCli(): Promise<void> {
++		return this.nativeHostService.restartClaudeCodeRouterCli();
++	}
++
++	//#endregion
+ }
 diff --git a/src/vs/workbench/workbench.common.main.ts b/src/vs/workbench/workbench.common.main.ts
 index 61d63db7b73..6d6ef004bb7 100644
 --- a/src/vs/workbench/workbench.common.main.ts
