@@ -59,28 +59,130 @@ index 8cb60a057b8..8b7c0172001 100644
 +	}
  }
 diff --git a/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts b/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts
-index f8e5e74bf6b..7e815f9bccf 100644
+index f8e5e74bf6b..72ad11e2645 100644
 --- a/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts
 +++ b/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts
-@@ -16,2 +16,4 @@ import { IsMainWindowFullscreenContext, IsCompactTitleBarContext, TitleBarStyleC
+@@ -10,3 +10,3 @@ import { IStorageService, StorageScope, StorageTarget } from '../../../../platfo
+ import { LayoutSettings } from '../../../services/layout/browser/layoutService.js';
+-import { Action2, MenuId, registerAction2 } from '../../../../platform/actions/common/actions.js';
++import { Action2, MenuId, registerAction2, MenuRegistry } from '../../../../platform/actions/common/actions.js';
+ import { ContextKeyExpr, ContextKeyExpression, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+@@ -16,2 +16,5 @@ import { IsMainWindowFullscreenContext, IsCompactTitleBarContext, TitleBarStyleC
  import { CustomTitleBarVisibility, TitleBarSetting, TitlebarStyle } from '../../../../platform/window/common/window.js';
 +import { IOpenerService } from '../../../../platform/opener/common/opener.js';
 +import { URI } from '../../../../base/common/uri.js';
++import { INSTANCE_ID, TOKEN_STORAGE_KEY, CALLBACK_SCHEME, CALLBACK_AUTHORITY, CALLBACK_PATH } from '../../../common/deployai365.js';
  
-@@ -278 +280,31 @@ export const GLOBAL_ACTIVITY_TITLE_ACTION: IAction = {
+@@ -278 +281,153 @@ export const GLOBAL_ACTIVITY_TITLE_ACTION: IAction = {
  };
 +
-+// View Balance Action
++// Account Menu
++const AccountMenuId = new MenuId('AccountMenu');
++
++// Account Button (shown when logged in) - using submenu for proper positioning
++MenuRegistry.appendMenuItem(MenuId.TitleBar, {
++	submenu: AccountMenuId,
++	title: { value: 'My Account', original: 'My Account' },
++	icon: { id: 'account' },
++	group: 'navigation',
++	order: 1001,
++	when: ContextKeyExpr.equals('isLoggedIn', true)
++});
++
++// Login Button (shown when not logged in)
++registerAction2(class LoginAction extends Action2 {
++	constructor() {
++		super({
++			id: 'workbench.action.login',
++			title: { value: 'Log In', original: 'Log In' },
++			menu: {
++				id: MenuId.TitleBar,
++				when: ContextKeyExpr.equals('isLoggedIn', false),
++				group: 'navigation',
++				order: 1001
++			}
++		});
++	}
++
++	async run(accessor: ServicesAccessor): Promise<void> {
++		const openerService = accessor.get(IOpenerService);
++
++		const callback = URI.from({
++			scheme: CALLBACK_SCHEME,
++			authority: CALLBACK_AUTHORITY,
++			path: CALLBACK_PATH,
++		});
++		const loginUrl = `https://login.deployai365.com/?platform=cline&originUrl=${encodeURIComponent(
++			callback.toString()
++		)}`;
++		await openerService.open(URI.parse(loginUrl), { openExternal: true });
++	}
++});
++
++// View Balance Menu Item
++registerAction2(class ViewBalanceMenuAction extends Action2 {
++	constructor() {
++		super({
++			id: 'workbench.action.viewBalanceMenu',
++			title: { value: 'View Balance', original: 'View Balance' },
++			menu: {
++				id: AccountMenuId,
++				group: 'account',
++				order: 1
++			}
++		});
++	}
++
++	async run(accessor: ServicesAccessor): Promise<void> {
++		const openerService = accessor.get(IOpenerService);
++		const storageService = accessor.get(IStorageService);
++
++		const token = storageService.get(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
++		if (token) {
++			const url = `https://deployai365.com/subscription-plans?serviceType=depcoder&instanceId=${INSTANCE_ID}&token=${token}`;
++			await openerService.open(URI.parse(url), { openExternal: true });
++		}
++	}
++});
++
++// Logout Menu Item
++registerAction2(class LogoutAction extends Action2 {
++	constructor() {
++		super({
++			id: 'workbench.action.logout',
++			title: { value: 'Log Out', original: 'Log Out' },
++			menu: {
++				id: AccountMenuId,
++				group: 'account',
++				order: 2
++			}
++		});
++	}
++
++	async run(accessor: ServicesAccessor): Promise<void> {
++		const storageService = accessor.get(IStorageService);
++		const contextKeyService = accessor.get(IContextKeyService);
++
++		// Remove all stored data
++		storageService.remove(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
++		storageService.remove('deployai365.auth.subKey', StorageScope.APPLICATION);
++		storageService.remove('deployai365.auth.balance', StorageScope.APPLICATION);
++
++		// Update context keys - both login status and balance status
++		contextKeyService.createKey('isLoggedIn', false).set(false);
++		contextKeyService.createKey('isLowBalance', false).set(false);
++	}
++});
++
++// Register View Balance button (shown when balance > 0.05)
 +registerAction2(class ViewBalanceAction extends Action2 {
 +	constructor() {
 +		super({
 +			id: 'workbench.action.viewBalance',
-+			title: localize2('viewBalance', 'View Balance'),
-+			tooltip: 'View Balance',
-+			icon: { id: 'credit-card' },
++			title: { value: 'View Balance', original: 'View Balance' },
 +			menu: {
 +				id: MenuId.TitleBar,
-+				when: ContextKeyExpr.true(),
++				when: ContextKeyExpr.equals('isLowBalance', false),
 +				group: 'navigation',
 +				order: 1000
 +			}
@@ -93,12 +195,62 @@ index f8e5e74bf6b..7e815f9bccf 100644
 +
 +		const token = storageService.get('deployai365.auth.token', StorageScope.APPLICATION);
 +		if (token) {
-+			const instanceId = 'deepsitet62401065';
-+			const url = `https://deployai365.com/subscription-plans?serviceType=depcoder&instanceId=${instanceId}&token=${token}`;
++			const url = `https://deployai365.com/subscription-plans?serviceType=depcoder&instanceId=${INSTANCE_ID}&token=${token}`;
 +			await openerService.open(URI.parse(url));
 +		}
 +	}
 +});
++
++// Register Low Balance button (shown when balance <= 0.05)
++registerAction2(class LowBalanceAction extends Action2 {
++	constructor() {
++		super({
++			id: 'workbench.action.lowBalance',
++			title: { value: 'Low Balance', original: 'Low Balance' },
++			menu: {
++				id: MenuId.TitleBar,
++				when: ContextKeyExpr.equals('isLowBalance', true),
++				group: 'navigation',
++				order: 1000
++			}
++		});
++	}
++
++	async run(accessor: ServicesAccessor): Promise<void> {
++		const openerService = accessor.get(IOpenerService);
++		const storageService = accessor.get(IStorageService);
++
++		const token = storageService.get('deployai365.auth.token', StorageScope.APPLICATION);
++		if (token) {
++			const url = `https://deployai365.com/subscription-plans?serviceType=depcoder&instanceId=${INSTANCE_ID}&token=${token}`;
++			await openerService.open(URI.parse(url));
++		}
++	}
++});
+diff --git a/src/vs/workbench/common/deployai365.ts b/src/vs/workbench/common/deployai365.ts
+new file mode 100644
+index 00000000000..0540eddeeb3
+--- /dev/null
++++ b/src/vs/workbench/common/deployai365.ts
+@@ -0,0 +1,18 @@
++/*---------------------------------------------------------------------------------------------
++ *  Copyright (c) Microsoft Corporation. All rights reserved.
++ *  Licensed under the MIT License. See License.txt in the project root for license information.
++ *--------------------------------------------------------------------------------------------*/
++
++/**
++ * DeployAI365 authentication and configuration constants
++ */
++
++export const INSTANCE_ID = 'clinet63610518';
++export const TOKEN_STORAGE_KEY = 'deployai365.auth.token';
++export const SUB_KEY_STORAGE_KEY = 'deployai365.auth.subKey';
++export const BALANCE_STORAGE_KEY = 'deployai365.auth.balance';
++export const CALLBACK_SCHEME = 'vscodium';
++export const CALLBACK_AUTHORITY = 'deployai365.auth';
++export const CALLBACK_PATH = '/callback';
++export const USER_INFO_API = `https://launch-api.deployai365.com/api/work-user/${INSTANCE_ID}`;
++export const API_ENDPOINT = 'https://modelproxy-api.deployai365.com/api/key/get_or_create_sub_key';
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.contribution.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.contribution.ts
 new file mode 100644
 index 00000000000..5d848074744
@@ -135,10 +287,10 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..6757146803f
+index 00000000000..380f5f13414
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,951 @@
+@@ -0,0 +1,1260 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -147,42 +299,56 @@ index 00000000000..6757146803f
 +import { Disposable } from '../../../../base/common/lifecycle.js';
 +import { IWorkbenchContribution } from '../../../common/contributions.js';
 +import { IWorkbenchLayoutService } from '../../../services/layout/browser/layoutService.js';
-+import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
++import {
++	IStorageService,
++	StorageScope,
++	StorageTarget,
++} from '../../../../platform/storage/common/storage.js';
 +import { IOpenerService } from '../../../../platform/opener/common/opener.js';
-+import { IURLHandler, IURLService } from '../../../../platform/url/common/url.js';
++import { Codicon } from '../../../../base/common/codicons.js';
++import {
++	IURLHandler,
++	IURLService,
++} from '../../../../platform/url/common/url.js';
 +import { URI } from '../../../../base/common/uri.js';
-+import { addDisposableListener, EventType, getWindow } from '../../../../base/browser/dom.js';
++import {
++	addDisposableListener,
++	EventType,
++	getWindow,
++} from '../../../../base/browser/dom.js';
 +import { IFileService } from '../../../../platform/files/common/files.js';
 +import { VSBuffer } from '../../../../base/common/buffer.js';
 +import { IPathService } from '../../../services/path/common/pathService.js';
 +import { isWindows } from '../../../../base/common/platform.js';
 +import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 +import { IHostService } from '../../../services/host/browser/host.js';
++import { IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
++import { INSTANCE_ID, TOKEN_STORAGE_KEY, SUB_KEY_STORAGE_KEY, BALANCE_STORAGE_KEY, CALLBACK_SCHEME, CALLBACK_AUTHORITY, CALLBACK_PATH, USER_INFO_API, API_ENDPOINT } from '../../../common/deployai365.js';
++
++const IsLowBalanceContext = new RawContextKey<boolean>('isLowBalance', false);
++const IsLoggedInContext = new RawContextKey<boolean>('isLoggedIn', false);
 +
 +const LANGUAGE_STORAGE_KEY = 'workbench.startupSplash.language';
-+const TOKEN_STORAGE_KEY = 'deployai365.auth.token';
-+const SUB_KEY_STORAGE_KEY = 'deployai365.auth.subKey';
-+const CALLBACK_AUTHORITY = 'deployai365.auth';
-+const CALLBACK_PATH = '/callback';
-+const CALLBACK_SCHEME = 'vscodium';
-+const INSTANCE_ID = 'deepsitet62401065';
-+const API_ENDPOINT = 'https://modelproxy-api.deployai365.com/api/key/get_or_create_sub_key';
-+const USER_INFO_API = `https://launch-api.deployai365.com/api/work-user/${INSTANCE_ID}`;
 +
-+export class StartupSplashContribution extends Disposable implements IWorkbenchContribution {
-+
++export class StartupSplashContribution
++	extends Disposable
++	implements IWorkbenchContribution {
 +	static readonly ID = 'workbench.contrib.startupSplash';
 +
 +	private splashContainer: HTMLElement | undefined;
 +	private currentLang = 'zh';
 +	private currentSlide = 0;
 +	private carouselInterval: any;
++	private balanceCheckInterval: any;
 +	private userName: string | undefined;
 +	private totalAmount: number | undefined;
 +	private isLoadingUserInfo = false;
++	private isLowBalanceContextKey: ReturnType<typeof IsLowBalanceContext.bindTo>;
++	private isLoggedInContextKey: ReturnType<typeof IsLoggedInContext.bindTo>;
 +
 +	constructor(
-+		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
++		@IWorkbenchLayoutService
++		private readonly layoutService: IWorkbenchLayoutService,
 +		@IStorageService private readonly storageService: IStorageService,
 +		@IOpenerService private readonly openerService: IOpenerService,
 +		@IURLService private readonly urlService: IURLService,
@@ -190,17 +356,27 @@ index 00000000000..6757146803f
 +		@IPathService private readonly pathService: IPathService,
 +		@IDialogService private readonly dialogService: IDialogService,
 +		@IHostService private readonly hostService: IHostService,
++		@IContextKeyService contextKeyService: IContextKeyService
 +	) {
 +		super();
++		this.isLowBalanceContextKey = IsLowBalanceContext.bindTo(contextKeyService);
++		this.isLoggedInContextKey = IsLoggedInContext.bindTo(contextKeyService);
++		// Check initial login state
++		const token = this.storageService.get(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
++		this.isLoggedInContextKey.set(!!token);
 +		this.init();
 +	}
 +
 +	private async init(): Promise<void> {
-+		const savedLanguage = this.storageService.get(LANGUAGE_STORAGE_KEY, StorageScope.APPLICATION);
++		const savedLanguage = this.storageService.get(
++			LANGUAGE_STORAGE_KEY,
++			StorageScope.APPLICATION
++		);
 +		this.currentLang = savedLanguage || 'zh';
 +
 +		this.registerUrlHandler();
 +		this.showSplash();
++		this.startBalanceCheck();
 +	}
 +
 +	private showSplash(): void {
@@ -224,7 +400,8 @@ index 00000000000..6757146803f
 +		globeIcon.textContent = '🌐';
 +		const langDisplay = document.createElement('span');
 +		langDisplay.id = 'langDisplay';
-+		langDisplay.textContent = this.currentLang === 'zh' ? '中文' : 'English';
++		langDisplay.textContent =
++			this.currentLang === 'zh' ? '中文' : 'English';
 +		langBtn.appendChild(globeIcon);
 +		langBtn.appendChild(langDisplay);
 +		langSwitch.appendChild(langBtn);
@@ -240,8 +417,7 @@ index 00000000000..6757146803f
 +		const logoBox = document.createElement('div');
 +		logoBox.className = 'logo-box';
 +		const logoIcon = document.createElement('span');
-+		logoIcon.className = 'logo-icon';
-+		logoIcon.textContent = '⚡';
++		logoIcon.className = `logo-icon codicon codicon-${Codicon.code.id}`;
 +		logoBox.appendChild(logoIcon);
 +		logoContainer.appendChild(logoBox);
 +		splashContent.appendChild(logoContainer);
@@ -251,10 +427,38 @@ index 00000000000..6757146803f
 +		carouselContainer.className = 'carousel-container';
 +
 +		const slides = [
-+			{ imageUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80', titleZh: '智能代码补全', titleEn: 'Intelligent Code Completion', textZh: '通过先进的 AI 模型，Claude Code 能够理解您的代码上下文，提供精准的代码建议', textEn: 'Using advanced AI models, Claude Code understands your code context and provides precise code suggestions' },
-+			{ imageUrl: 'https://images.unsplash.com/photo-1552308995-2baac1ad5490?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80', titleZh: '实时协作', titleEn: 'Real-time Collaboration', textZh: '与团队成员无缝协作，共享代码、注释和想法，提高开发效率', textEn: 'Seamlessly collaborate with team members, share code, comments and ideas to improve development efficiency' },
-+			{ imageUrl: 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80', titleZh: '代码分析与优化', titleEn: 'Code Analysis & Optimization', textZh: '自动检测潜在问题并提供改进建议，让您的代码更高效、更安全', textEn: 'Automatically detect potential issues and provide improvement suggestions to make your code more efficient and secure' },
-+			{ imageUrl: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80', titleZh: '多语言支持', titleEn: 'Multi-language Support', textZh: '支持 Python、JavaScript、Java、C++ 等多种主流编程语言，满足不同开发需求', textEn: 'Supports Python, JavaScript, Java, C++ and other mainstream programming languages to meet various development needs' }
++			{
++				imageUrl:
++					'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80',
++				titleZh: '智能代码补全',
++				titleEn: 'Intelligent Code Completion',
++				textZh: '通过先进的 AI 模型，Claude Code 能够理解您的代码上下文，提供精准的代码建议',
++				textEn: 'Using advanced AI models, Claude Code understands your code context and provides precise code suggestions',
++			},
++			{
++				imageUrl:
++					'https://images.unsplash.com/photo-1552308995-2baac1ad5490?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80',
++				titleZh: '实时协作',
++				titleEn: 'Real-time Collaboration',
++				textZh: '与团队成员无缝协作，共享代码、注释和想法，提高开发效率',
++				textEn: 'Seamlessly collaborate with team members, share code, comments and ideas to improve development efficiency',
++			},
++			{
++				imageUrl:
++					'https://images.unsplash.com/photo-1542831371-29b0f74f9713?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80',
++				titleZh: '代码分析与优化',
++				titleEn: 'Code Analysis & Optimization',
++				textZh: '自动检测潜在问题并提供改进建议，让您的代码更高效、更安全',
++				textEn: 'Automatically detect potential issues and provide improvement suggestions to make your code more efficient and secure',
++			},
++			{
++				imageUrl:
++					'https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80',
++				titleZh: '多语言支持',
++				titleEn: 'Multi-language Support',
++				textZh: '支持 Python、JavaScript、Java、C++ 等多种主流编程语言，满足不同开发需求',
++				textEn: 'Supports Python, JavaScript, Java, C++ and other mainstream programming languages to meet various development needs',
++			},
 +		];
 +
 +		slides.forEach((slideData, index) => {
@@ -324,7 +528,10 @@ index 00000000000..6757146803f
 +		startButton.appendChild(arrowIcon);
 +
 +		// Initialize button state based on token
-+		const token = this.storageService.get(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
++		const token = this.storageService.get(
++			TOKEN_STORAGE_KEY,
++			StorageScope.APPLICATION
++		);
 +		if (token) {
 +			// If has token, set loading state initially
 +			this.isLoadingUserInfo = true;
@@ -344,8 +551,7 @@ index 00000000000..6757146803f
 +		loginStatus.id = 'loginStatus';
 +		loginStatus.className = 'login-status';
 +		const userIcon = document.createElement('span');
-+		userIcon.className = 'user-icon';
-+		userIcon.textContent = '👤';
++		userIcon.className = `user-icon codicon codicon-${Codicon.account.id}`;
 +		const statusTextZh = document.createElement('span');
 +		statusTextZh.className = 'lang-zh';
 +		statusTextZh.textContent = '未登录';
@@ -395,7 +601,9 @@ index 00000000000..6757146803f
 +	}
 +
 +	private createStars(): void {
-+		const starField = this.splashContainer?.querySelector('#starField') as HTMLElement;
++		const starField = this.splashContainer?.querySelector(
++			'#starField'
++		) as HTMLElement;
 +		if (!starField) {
 +			return;
 +		}
@@ -424,16 +632,20 @@ index 00000000000..6757146803f
 +	}
 +
 +	private setupCarousel(): void {
-+		const slides = this.splashContainer?.querySelectorAll('.slide') as NodeListOf<HTMLElement>;
-+		const dots = this.splashContainer?.querySelectorAll('.carousel-dot') as NodeListOf<HTMLElement>;
++		const slides = this.splashContainer?.querySelectorAll(
++			'.slide'
++		) as NodeListOf<HTMLElement>;
++		const dots = this.splashContainer?.querySelectorAll(
++			'.carousel-dot'
++		) as NodeListOf<HTMLElement>;
 +
 +		if (!slides || !dots) {
 +			return;
 +		}
 +
 +		const showSlide = (index: number) => {
-+			slides.forEach(slide => slide.classList.remove('active'));
-+			dots.forEach(dot => dot.classList.remove('active'));
++			slides.forEach((slide) => slide.classList.remove('active'));
++			dots.forEach((dot) => dot.classList.remove('active'));
 +
 +			slides[index].classList.add('active');
 +			dots[index].classList.add('active');
@@ -446,23 +658,39 @@ index 00000000000..6757146803f
 +		};
 +
 +		dots.forEach((dot, index) => {
-+			this._register(addDisposableListener(dot, EventType.CLICK, () => {
-+				showSlide(index);
-+				this.resetCarouselInterval();
-+			}));
++			this._register(
++				addDisposableListener(dot, EventType.CLICK, () => {
++					showSlide(index);
++					this.resetCarouselInterval();
++				})
++			);
 +		});
 +
 +		this.carouselInterval = setInterval(nextSlide, 5000);
 +
-+		const carouselContainer = this.splashContainer?.querySelector('.carousel-container') as HTMLElement;
++		const carouselContainer = this.splashContainer?.querySelector(
++			'.carousel-container'
++		) as HTMLElement;
 +		if (carouselContainer) {
-+			this._register(addDisposableListener(carouselContainer, EventType.MOUSE_ENTER, () => {
-+				clearInterval(this.carouselInterval);
-+			}));
++			this._register(
++				addDisposableListener(
++					carouselContainer,
++					EventType.MOUSE_ENTER,
++					() => {
++						clearInterval(this.carouselInterval);
++					}
++				)
++			);
 +
-+			this._register(addDisposableListener(carouselContainer, EventType.MOUSE_LEAVE, () => {
-+				this.resetCarouselInterval();
-+			}));
++			this._register(
++				addDisposableListener(
++					carouselContainer,
++					EventType.MOUSE_LEAVE,
++					() => {
++						this.resetCarouselInterval();
++					}
++				)
++			);
 +		}
 +	}
 +
@@ -470,11 +698,15 @@ index 00000000000..6757146803f
 +		clearInterval(this.carouselInterval);
 +		this.carouselInterval = setInterval(() => {
 +			this.currentSlide = (this.currentSlide + 1) % 4;
-+			const slides = this.splashContainer?.querySelectorAll('.slide') as NodeListOf<HTMLElement>;
-+			const dots = this.splashContainer?.querySelectorAll('.carousel-dot') as NodeListOf<HTMLElement>;
++			const slides = this.splashContainer?.querySelectorAll(
++				'.slide'
++			) as NodeListOf<HTMLElement>;
++			const dots = this.splashContainer?.querySelectorAll(
++				'.carousel-dot'
++			) as NodeListOf<HTMLElement>;
 +
-+			slides.forEach(slide => slide.classList.remove('active'));
-+			dots.forEach(dot => dot.classList.remove('active'));
++			slides.forEach((slide) => slide.classList.remove('active'));
++			dots.forEach((dot) => dot.classList.remove('active'));
 +
 +			slides[this.currentSlide].classList.add('active');
 +			dots[this.currentSlide].classList.add('active');
@@ -486,55 +718,85 @@ index 00000000000..6757146803f
 +			return;
 +		}
 +
-+		const langSwitch = this.splashContainer.querySelector('#langSwitch') as HTMLElement;
++		const langSwitch = this.splashContainer.querySelector(
++			'#langSwitch'
++		) as HTMLElement;
 +		if (langSwitch) {
-+			this._register(addDisposableListener(langSwitch, EventType.CLICK, () => {
-+				this.toggleLanguage();
-+			}));
++			this._register(
++				addDisposableListener(langSwitch, EventType.CLICK, () => {
++					this.toggleLanguage();
++				})
++			);
 +		}
 +
-+		const startButton = this.splashContainer.querySelector('#startButton') as HTMLElement;
++		const startButton = this.splashContainer.querySelector(
++			'#startButton'
++		) as HTMLElement;
 +		if (startButton) {
-+			this._register(addDisposableListener(startButton, EventType.CLICK, () => {
-+				this.handleStartButtonClick();
-+			}));
++			this._register(
++				addDisposableListener(startButton, EventType.CLICK, () => {
++					this.handleStartButtonClick();
++				})
++			);
 +		}
 +
-+		const loginStatus = this.splashContainer.querySelector('#loginStatus') as HTMLElement;
++		const loginStatus = this.splashContainer.querySelector(
++			'#loginStatus'
++		) as HTMLElement;
 +		if (loginStatus) {
-+			this._register(addDisposableListener(loginStatus, EventType.CLICK, () => {
-+				this.triggerLoginIfNeeded();
-+			}));
++			this._register(
++				addDisposableListener(loginStatus, EventType.CLICK, () => {
++					this.triggerLoginIfNeeded();
++				})
++			);
 +		}
 +
 +		const targetWindow = getWindow(this.splashContainer);
-+		this._register(addDisposableListener(targetWindow.document, EventType.KEY_DOWN, (e: KeyboardEvent) => {
-+			if (e.key === 'Enter' || e.key === ' ') {
-+				e.preventDefault();
-+				this.handleStartButtonClick();
-+			}
-+		}));
++		this._register(
++			addDisposableListener(
++				targetWindow.document,
++				EventType.KEY_DOWN,
++				(e: KeyboardEvent) => {
++					if (e.key === 'Enter' || e.key === ' ') {
++						e.preventDefault();
++						this.handleStartButtonClick();
++					}
++				}
++			)
++		);
 +	}
 +
 +	private toggleLanguage(): void {
 +		this.currentLang = this.currentLang === 'zh' ? 'en' : 'zh';
 +
-+		this.storageService.store(LANGUAGE_STORAGE_KEY, this.currentLang, StorageScope.APPLICATION, StorageTarget.MACHINE);
++		this.storageService.store(
++			LANGUAGE_STORAGE_KEY,
++			this.currentLang,
++			StorageScope.APPLICATION,
++			StorageTarget.MACHINE
++		);
 +
-+		const langDisplay = this.splashContainer?.querySelector('#langDisplay') as HTMLElement;
++		const langDisplay = this.splashContainer?.querySelector(
++			'#langDisplay'
++		) as HTMLElement;
 +		if (langDisplay) {
-+			langDisplay.textContent = this.currentLang === 'zh' ? '中文' : 'English';
++			langDisplay.textContent =
++				this.currentLang === 'zh' ? '中文' : 'English';
 +		}
 +
-+		const zhElements = this.splashContainer?.querySelectorAll('.lang-zh') as NodeListOf<HTMLElement>;
-+		const enElements = this.splashContainer?.querySelectorAll('.lang-en') as NodeListOf<HTMLElement>;
++		const zhElements = this.splashContainer?.querySelectorAll(
++			'.lang-zh'
++		) as NodeListOf<HTMLElement>;
++		const enElements = this.splashContainer?.querySelectorAll(
++			'.lang-en'
++		) as NodeListOf<HTMLElement>;
 +
 +		if (this.currentLang === 'zh') {
-+			zhElements.forEach(el => el.style.display = '');
-+			enElements.forEach(el => el.style.display = 'none');
++			zhElements.forEach((el) => (el.style.display = ''));
++			enElements.forEach((el) => (el.style.display = 'none'));
 +		} else {
-+			zhElements.forEach(el => el.style.display = 'none');
-+			enElements.forEach(el => el.style.display = '');
++			zhElements.forEach((el) => (el.style.display = 'none'));
++			enElements.forEach((el) => (el.style.display = ''));
 +		}
 +	}
 +
@@ -544,10 +806,16 @@ index 00000000000..6757146803f
 +			return;
 +		}
 +
-+		const token = this.storageService.get(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
++		const token = this.storageService.get(
++			TOKEN_STORAGE_KEY,
++			StorageScope.APPLICATION
++		);
 +		if (token) {
 +			// Check if user needs to subscribe before hiding splash
-+			if (typeof this.totalAmount === 'number' && this.totalAmount <= 0.05) {
++			if (
++				typeof this.totalAmount === 'number' &&
++				this.totalAmount <= 0.05
++			) {
 +				this.showInsufficientBalanceDialog(token);
 +			}
 +			this.hideSplash();
@@ -557,13 +825,22 @@ index 00000000000..6757146803f
 +	}
 +
 +	private triggerLoginIfNeeded(): void {
-+		const token = this.storageService.get(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
++		const token = this.storageService.get(
++			TOKEN_STORAGE_KEY,
++			StorageScope.APPLICATION
++		);
 +		if (token) {
 +			this.updateLoginStatus();
 +			return;
 +		}
-+		const callback = URI.from({ scheme: CALLBACK_SCHEME, authority: CALLBACK_AUTHORITY, path: CALLBACK_PATH });
-+		const loginUrl = `https://login.deployai365.com/?platform=cline&originUrl=${encodeURIComponent(callback.toString())}`;
++		const callback = URI.from({
++			scheme: CALLBACK_SCHEME,
++			authority: CALLBACK_AUTHORITY,
++			path: CALLBACK_PATH,
++		});
++		const loginUrl = `https://login.deployai365.com/?platform=cline&originUrl=${encodeURIComponent(
++			callback.toString()
++		)}`;
 +		this.openerService.open(URI.parse(loginUrl), { openExternal: true });
 +	}
 +
@@ -579,7 +856,9 @@ index 00000000000..6757146803f
 +
 +		setTimeout(() => {
 +			if (this.splashContainer && this.splashContainer.parentNode) {
-+				this.splashContainer.parentNode.removeChild(this.splashContainer);
++				this.splashContainer.parentNode.removeChild(
++					this.splashContainer
++				);
 +			}
 +			this.splashContainer = undefined;
 +		}, 300);
@@ -589,15 +868,34 @@ index 00000000000..6757146803f
 +		if (!this.splashContainer) {
 +			return;
 +		}
-+		const token = this.storageService.get(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
-+		const statusZh = this.splashContainer.querySelector('#loginStatus .lang-zh') as HTMLElement | null;
-+		const statusEn = this.splashContainer.querySelector('#loginStatus .lang-en') as HTMLElement | null;
-+		const hintZh = this.splashContainer.querySelector('#loginStatus .login-hint.lang-zh') as HTMLElement | null;
-+		const hintEn = this.splashContainer.querySelector('#loginStatus .login-hint.lang-en') as HTMLElement | null;
-+		const startButton = this.splashContainer.querySelector('#startButton') as HTMLButtonElement | null;
-+		const btnTextZh = startButton?.querySelector('.lang-zh') as HTMLElement | null;
-+		const btnTextEn = startButton?.querySelector('.lang-en') as HTMLElement | null;
-+		const arrowIcon = startButton?.querySelector('.arrow-icon') as HTMLElement | null;
++		const token = this.storageService.get(
++			TOKEN_STORAGE_KEY,
++			StorageScope.APPLICATION
++		);
++		const statusZh = this.splashContainer.querySelector(
++			'#loginStatus .lang-zh'
++		) as HTMLElement | null;
++		const statusEn = this.splashContainer.querySelector(
++			'#loginStatus .lang-en'
++		) as HTMLElement | null;
++		const hintZh = this.splashContainer.querySelector(
++			'#loginStatus .login-hint.lang-zh'
++		) as HTMLElement | null;
++		const hintEn = this.splashContainer.querySelector(
++			'#loginStatus .login-hint.lang-en'
++		) as HTMLElement | null;
++		const startButton = this.splashContainer.querySelector(
++			'#startButton'
++		) as HTMLButtonElement | null;
++		const btnTextZh = startButton?.querySelector(
++			'.lang-zh'
++		) as HTMLElement | null;
++		const btnTextEn = startButton?.querySelector(
++			'.lang-en'
++		) as HTMLElement | null;
++		const arrowIcon = startButton?.querySelector(
++			'.arrow-icon'
++		) as HTMLElement | null;
 +
 +		if (token) {
 +			this.isLoadingUserInfo = true;
@@ -605,48 +903,82 @@ index 00000000000..6757146803f
 +				startButton.disabled = true;
 +				startButton.classList.add('loading');
 +			}
-+			if (btnTextZh) { btnTextZh.textContent = '加载中...'; }
-+			if (btnTextEn) { btnTextEn.textContent = 'Loading...'; }
-+			if (arrowIcon) { arrowIcon.style.display = 'none'; }
++			if (btnTextZh) {
++				btnTextZh.textContent = '加载中...';
++			}
++			if (btnTextEn) {
++				btnTextEn.textContent = 'Loading...';
++			}
++			if (arrowIcon) {
++				arrowIcon.style.display = 'none';
++			}
++
++			await this.fetchAndSaveSubKey(token);
 +
 +			// Fetch user info
 +			try {
 +				const response = await fetch(USER_INFO_API, {
 +					headers: {
-+						'Authorization': `Bearer ${token}`
-+					}
++						Authorization: `Bearer ${token}`,
++					},
 +				});
 +
 +				if (response.status === 401) {
 +					// Token invalid, trigger login
-+					this.storageService.remove(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
-+					const callback = URI.from({ scheme: CALLBACK_SCHEME, authority: CALLBACK_AUTHORITY, path: CALLBACK_PATH });
-+					const loginUrl = `https://login.deployai365.com/?platform=cline&originUrl=${encodeURIComponent(callback.toString())}`;
-+					this.openerService.open(URI.parse(loginUrl), { openExternal: true });
++					this.storageService.remove(
++						TOKEN_STORAGE_KEY,
++						StorageScope.APPLICATION
++					);
++					const callback = URI.from({
++						scheme: CALLBACK_SCHEME,
++						authority: CALLBACK_AUTHORITY,
++						path: CALLBACK_PATH,
++					});
++					const loginUrl = `https://login.deployai365.com/?platform=cline&originUrl=${encodeURIComponent(
++						callback.toString()
++					)}`;
++					this.openerService.open(URI.parse(loginUrl), {
++						openExternal: true,
++					});
 +					return;
 +				}
 +
 +				if (response.ok) {
 +					const data = await response.json();
-+					console.log('user info response:', data, JSON.stringify(data));
 +					this.userName = data?.data?.user_name;
 +					this.totalAmount = data?.data?.total_amount;
 +
 +					if (this.userName) {
-+						if (statusZh) { statusZh.textContent = this.userName; }
-+						if (statusEn) { statusEn.textContent = this.userName; }
++						if (statusZh) {
++							statusZh.textContent = this.userName;
++						}
++						if (statusEn) {
++							statusEn.textContent = this.userName;
++						}
 +					} else {
-+						if (statusZh) { statusZh.textContent = '已登录'; }
-+						if (statusEn) { statusEn.textContent = 'Logged in'; }
++						if (statusZh) {
++							statusZh.textContent = '已登录';
++						}
++						if (statusEn) {
++							statusEn.textContent = 'Logged in';
++						}
 +					}
 +				} else {
-+					if (statusZh) { statusZh.textContent = '已登录'; }
-+					if (statusEn) { statusEn.textContent = 'Logged in'; }
++					if (statusZh) {
++						statusZh.textContent = '已登录';
++					}
++					if (statusEn) {
++						statusEn.textContent = 'Logged in';
++					}
 +				}
 +			} catch (error) {
 +				console.error('Error fetching user info:', error);
-+				if (statusZh) { statusZh.textContent = '已登录'; }
-+				if (statusEn) { statusEn.textContent = 'Logged in'; }
++				if (statusZh) {
++					statusZh.textContent = '已登录';
++				}
++				if (statusEn) {
++					statusEn.textContent = 'Logged in';
++				}
 +			}
 +
 +			// Remove loading state after fetch completes
@@ -655,17 +987,35 @@ index 00000000000..6757146803f
 +				startButton.disabled = false;
 +				startButton.classList.remove('loading');
 +			}
-+			if (btnTextZh) { btnTextZh.textContent = '启动 Claude Code'; }
-+			if (btnTextEn) { btnTextEn.textContent = 'Launch Claude Code'; }
-+			if (arrowIcon) { arrowIcon.style.display = ''; }
++			if (btnTextZh) {
++				btnTextZh.textContent = '启动 Claude Code';
++			}
++			if (btnTextEn) {
++				btnTextEn.textContent = 'Launch Claude Code';
++			}
++			if (arrowIcon) {
++				arrowIcon.style.display = '';
++			}
 +
-+			if (hintZh) { hintZh.style.display = 'none'; }
-+			if (hintEn) { hintEn.style.display = 'none'; }
++			if (hintZh) {
++				hintZh.style.display = 'none';
++			}
++			if (hintEn) {
++				hintEn.style.display = 'none';
++			}
 +		} else {
-+			if (statusZh) { statusZh.textContent = '未登录'; }
-+			if (statusEn) { statusEn.textContent = 'Not logged in'; }
-+			if (hintZh) { hintZh.style.display = this.currentLang === 'zh' ? '' : 'none'; }
-+			if (hintEn) { hintEn.style.display = this.currentLang === 'en' ? '' : 'none'; }
++			if (statusZh) {
++				statusZh.textContent = '未登录';
++			}
++			if (statusEn) {
++				statusEn.textContent = 'Not logged in';
++			}
++			if (hintZh) {
++				hintZh.style.display = this.currentLang === 'zh' ? '' : 'none';
++			}
++			if (hintEn) {
++				hintEn.style.display = this.currentLang === 'en' ? '' : 'none';
++			}
 +		}
 +	}
 +
@@ -675,14 +1025,23 @@ index 00000000000..6757146803f
 +				if (uri.scheme !== CALLBACK_SCHEME) {
 +					return false;
 +				}
-+				if (uri.authority !== CALLBACK_AUTHORITY || uri.path !== CALLBACK_PATH) {
++				if (
++					uri.authority !== CALLBACK_AUTHORITY ||
++					uri.path !== CALLBACK_PATH
++				) {
 +					return false;
 +				}
 +				const params = new URLSearchParams(uri.query ?? '');
 +				const token = params.get('token');
 +				if (token) {
-+					this.storageService.store(TOKEN_STORAGE_KEY, token, StorageScope.APPLICATION, StorageTarget.MACHINE);
-+					await this.fetchAndSaveSubKey(token);
++					this.storageService.store(
++						TOKEN_STORAGE_KEY,
++						token,
++						StorageScope.APPLICATION,
++						StorageTarget.MACHINE
++					);
++					// Update login state immediately
++					this.isLoggedInContextKey.set(true);
 +					// Check user info and total_amount after login
 +					await this.checkUserAndSubscription(token);
 +					this.updateLoginStatus();
@@ -690,38 +1049,46 @@ index 00000000000..6757146803f
 +					return true;
 +				}
 +				return false;
-+			}
++			},
 +		};
 +		this._register(this.urlService.registerHandler(handler));
 +	}
 +
 +	private showInsufficientBalanceDialog(token: string): void {
-+		const message = this.currentLang === 'zh'
-+			? '余额不足，请充值'
-+			: 'Insufficient balance, please recharge';
-+		const detail = this.currentLang === 'zh'
-+			? '您的账户余额不足，点击确定前往充值页面。'
-+			: 'Your account balance is insufficient. Click OK to go to the recharge page.';
++		const message =
++			this.currentLang === 'zh'
++				? '余额不足，请充值'
++				: 'Insufficient balance, please recharge';
++		const detail =
++			this.currentLang === 'zh'
++				? '您的账户余额不足，点击确定前往充值页面。'
++				: 'Your account balance is insufficient. Click OK to go to the recharge page.';
 +
-+		this.dialogService.confirm({
-+			message,
-+			detail,
-+			primaryButton: this.currentLang === 'zh' ? '确定' : 'OK',
-+			cancelButton: this.currentLang === 'zh' ? '取消' : 'Cancel'
-+		}).then(result => {
-+			if (result.confirmed) {
-+				const subscriptionUrl = `https://deployai365.com/subscription-plans?serviceType=depcoder&instanceId=${INSTANCE_ID}&token=${encodeURIComponent(token)}&successUrl=${encodeURIComponent('vscodium://')}`;
-+				this.openerService.open(URI.parse(subscriptionUrl), { openExternal: true });
-+			}
-+		});
++		this.dialogService
++			.confirm({
++				message,
++				detail,
++				primaryButton: this.currentLang === 'zh' ? '确定' : 'OK',
++				cancelButton: this.currentLang === 'zh' ? '取消' : 'Cancel',
++			})
++			.then((result) => {
++				if (result.confirmed) {
++					const subscriptionUrl = `https://deployai365.com/subscription-plans?serviceType=depcoder&instanceId=${INSTANCE_ID}&token=${encodeURIComponent(
++						token
++					)}&successUrl=${encodeURIComponent('vscodium://')}`;
++					this.openerService.open(URI.parse(subscriptionUrl), {
++						openExternal: true,
++					});
++				}
++			});
 +	}
 +
 +	private async checkUserAndSubscription(token: string): Promise<void> {
 +		try {
 +			const response = await fetch(USER_INFO_API, {
 +				headers: {
-+					'Authorization': `Bearer ${token}`
-+				}
++					Authorization: `Bearer ${token}`,
++				},
 +			});
 +
 +			if (response.ok) {
@@ -730,7 +1097,10 @@ index 00000000000..6757146803f
 +				this.totalAmount = data?.data?.total_amount;
 +
 +				// Check if user needs to subscribe
-+				if (typeof this.totalAmount === 'number' && this.totalAmount <= 0.05) {
++				if (
++					typeof this.totalAmount === 'number' &&
++					this.totalAmount <= 0.05
++				) {
 +					this.showInsufficientBalanceDialog(token);
 +				}
 +			}
@@ -744,12 +1114,12 @@ index 00000000000..6757146803f
 +			const response = await fetch(API_ENDPOINT, {
 +				method: 'POST',
 +				headers: {
-+					'Authorization': `Bearer ${token}`,
-+					'Content-Type': 'application/json'
++					Authorization: `Bearer ${token}`,
++					'Content-Type': 'application/json',
 +				},
 +				body: JSON.stringify({
-+					instance_id: INSTANCE_ID
-+				})
++					instance_id: INSTANCE_ID,
++				}),
 +			});
 +
 +			if (!response.ok) {
@@ -760,7 +1130,12 @@ index 00000000000..6757146803f
 +			const data = await response.json();
 +			const subKey = data?.data?.sub_key;
 +			if (subKey) {
-+				this.storageService.store(SUB_KEY_STORAGE_KEY, subKey, StorageScope.APPLICATION, StorageTarget.MACHINE);
++				this.storageService.store(
++					SUB_KEY_STORAGE_KEY,
++					subKey,
++					StorageScope.APPLICATION,
++					StorageTarget.MACHINE
++				);
 +				await this.updateConfigFile(subKey);
 +			}
 +		} catch (error) {
@@ -774,7 +1149,9 @@ index 00000000000..6757146803f
 +			let config: any = { Providers: [{ api_key: '' }] };
 +
 +			try {
-+				const content = await this.fileService.readFile(URI.file(configPath));
++				const content = await this.fileService.readFile(
++					URI.file(configPath)
++				);
 +				config = JSON.parse(content.value.toString());
 +			} catch (e) {
 +				// File doesn't exist yet, use default config
@@ -789,7 +1166,9 @@ index 00000000000..6757146803f
 +
 +			config.Providers[0].api_key = subKey;
 +
-+			const content = VSBuffer.fromString(JSON.stringify(config, null, 2));
++			const content = VSBuffer.fromString(
++				JSON.stringify(config, null, 2)
++			);
 +			await this.fileService.writeFile(URI.file(configPath), content);
 +			console.log('Config file updated successfully');
 +
@@ -824,10 +1203,9 @@ index 00000000000..6757146803f
 +			height: '100%',
 +			backgroundColor: '#000',
 +			color: '#fff',
-+			fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 +			zIndex: '10000',
 +			opacity: '1',
-+			overflow: 'hidden'
++			overflow: 'hidden',
 +		});
 +	}
 +
@@ -926,19 +1304,26 @@ index 00000000000..6757146803f
 +				animation: float 6s ease-in-out infinite;
 +			}
 +
-+			.logo-box {
-+				width: 96px;
-+				height: 96px;
-+				border-radius: 16px;
-+				background: linear-gradient(to bottom right, #D97757, #c06548);
-+				display: flex;
-+				align-items: center;
-+				justify-content: center;
-+				font-size: 48px;
-+				box-shadow: 0 10px 25px rgba(217, 119, 87, 0.3);
-+			}
++		.logo-box {
++			width: 96px;
++			height: 96px;
++			border-radius: 16px;
++			background: linear-gradient(to bottom right, #D97757, #c06548);
++			display: flex;
++			align-items: center;
++			justify-content: center;
++			font-size: 40px;
++			font-weight: bold;
++			box-shadow: 0 10px 25px rgba(217, 119, 87, 0.3);
++		}
 +
-+			.carousel-container {
++		.logo-icon {
++			font-size: 40px !important;
++			font-weight: 900;
++			line-height: 1;
++		}
++
++		.carousel-container {
 +				width: 100%;
 +				max-width: 768px;
 +				margin: 0 auto 48px;
@@ -1059,6 +1444,10 @@ index 00000000000..6757146803f
 +			.login-status {
 +				cursor: pointer;
 +				transition: color 0.2s;
++				display: flex;
++				align-items: center;
++				justify-content: center;
++				gap: 4px;
 +			}
 +
 +			.login-status:hover {
@@ -1089,6 +1478,78 @@ index 00000000000..6757146803f
 +		`;
 +		targetWindow.document.head.appendChild(style);
 +	}
++
++	private startBalanceCheck(): void {
++		const token = this.storageService.get(
++			TOKEN_STORAGE_KEY,
++			StorageScope.APPLICATION
++		);
++
++		if (token) {
++			// Initial fetch
++			this.fetchUserBalance(token);
++
++			// Set up interval to fetch every 10 seconds
++			this.balanceCheckInterval = setInterval(() => {
++				this.fetchUserBalance(token);
++			}, 10000);
++
++			// Clean up on dispose
++			this._register({
++				dispose: () => {
++					if (this.balanceCheckInterval) {
++						clearInterval(this.balanceCheckInterval);
++					}
++				},
++			});
++		}
++	}
++
++	private async fetchUserBalance(token: string): Promise<void> {
++		try {
++			const response = await fetch(USER_INFO_API, {
++				headers: {
++					Authorization: `Bearer ${token}`,
++				},
++			});
++
++			if (response.ok) {
++				const data = await response.json();
++				const newAmount = data?.data?.total_amount;
++				this.totalAmount = newAmount;
++				// Store balance in storage for other components to access
++				this.storageService.store(
++					BALANCE_STORAGE_KEY,
++					String(this.totalAmount),
++					StorageScope.APPLICATION,
++					StorageTarget.MACHINE
++				);
++				// Update context key
++				if (typeof this.totalAmount === 'number') {
++					this.isLowBalanceContextKey.set(this.totalAmount <= 0.05);
++				}
++			}
++		} catch (error) {
++			console.error('Error fetching user balance:', error);
++		}
++	}
++
++	public getTotalAmount(): number | undefined {
++		return this.totalAmount;
++	}
++}
++
++// Export function to get current balance
++let currentBalanceInstance: StartupSplashContribution | undefined;
++
++export function setBalanceInstance(
++	instance: StartupSplashContribution
++): void {
++	currentBalanceInstance = instance;
++}
++
++export function getCurrentBalance(): number | undefined {
++	return currentBalanceInstance?.getTotalAmount();
 +}
 diff --git a/src/vs/workbench/services/host/browser/browserHostService.ts b/src/vs/workbench/services/host/browser/browserHostService.ts
 index f7acdcc4d1a..762e74aa045 100644
