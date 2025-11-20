@@ -1,0 +1,45 @@
+diff --git a/src/vs/workbench/browser/parts/globalCompositeBar.ts b/src/vs/workbench/browser/parts/globalCompositeBar.ts
+index 48220d63dc3..fefc1de4ba7 100644
+--- a/src/vs/workbench/browser/parts/globalCompositeBar.ts
++++ b/src/vs/workbench/browser/parts/globalCompositeBar.ts
+@@ -100,16 +100,15 @@ export class GlobalCompositeBar extends Disposable {
+ 			orientation: ActionsOrientation.VERTICAL,
+-			ariaLabel: localize('manage', "Manage"),
+-			preventLoopNavigation: true
+-		}));
++		ariaLabel: localize('manage', "Manage"),
++		preventLoopNavigation: true
++	}));
+ 
+-		if (this.accountsVisibilityPreference) {
+-			this.globalActivityActionBar.push(this.accountAction, { index: GlobalCompositeBar.ACCOUNTS_ACTION_INDEX });
+-		}
+ 
+-		this.globalActivityActionBar.push(this.globalActivityAction);
++	// if (this.accountsVisibilityPreference) {
++	// 	this.globalActivityActionBar.push(this.accountAction, { index: GlobalCompositeBar.ACCOUNTS_ACTION_INDEX });
++	// }
+ 
+-		this.registerListeners();
+-	}
++	// this.globalActivityActionBar.push(this.globalActivityAction);
+ 
+-	private registerListeners(): void {
++	this.registerListeners();
++}	private registerListeners(): void {
+ 		this.extensionService.whenInstalledExtensionsRegistered().then(() => {
+@@ -134,3 +133,4 @@ export class GlobalCompositeBar extends Disposable {
+ 	getContextMenuActions(): IAction[] {
+-		return [toAction({ id: 'toggleAccountsVisibility', label: localize('accounts', "Accounts"), checked: this.accountsVisibilityPreference, run: () => this.accountsVisibilityPreference = !this.accountsVisibilityPreference })];
++		return [];
++		// return [toAction({ id: 'toggleAccountsVisibility', label: localize('accounts', "Accounts"), checked: this.accountsVisibilityPreference, run: () => this.accountsVisibilityPreference = !this.accountsVisibilityPreference })];
+ 	}
+@@ -620,2 +620,3 @@ export class GlobalActivityActionViewItem extends AbstractGlobalActivityActionVi
+ 		super.render(container);
++		hide(container);
+ 
+@@ -744,3 +745,3 @@ function simpleActivityContextMenuActions(storageService: IStorageService, isAcc
+ export function isAccountsActionVisible(storageService: IStorageService): boolean {
+-	return storageService.getBoolean(AccountsActivityActionViewItem.ACCOUNTS_VISIBILITY_PREFERENCE_KEY, StorageScope.PROFILE, true);
++	return storageService.getBoolean(AccountsActivityActionViewItem.ACCOUNTS_VISIBILITY_PREFERENCE_KEY, StorageScope.PROFILE, false);
+ }
