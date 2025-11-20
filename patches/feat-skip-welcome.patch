@@ -1,0 +1,27 @@
+diff --git a/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedInput.ts b/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedInput.ts
+index 9c4e641b049..035bb7cf546 100644
+--- a/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedInput.ts
++++ b/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedInput.ts
+@@ -71,3 +71,3 @@ export class GettingStartedInput extends EditorInput {
+ 		this._showTelemetryNotice = !!options.showTelemetryNotice;
+-		this._showWelcome = options.showWelcome ?? true;
++		this._showWelcome = options.showWelcome ?? false;
+ 		this._walkthroughPageTitle = options.walkthroughPageTitle;
+diff --git a/src/vs/workbench/services/environment/browser/environmentService.ts b/src/vs/workbench/services/environment/browser/environmentService.ts
+index a50ad52689b..acb56946276 100644
+--- a/src/vs/workbench/services/environment/browser/environmentService.ts
++++ b/src/vs/workbench/services/environment/browser/environmentService.ts
+@@ -251,3 +251,3 @@ export class BrowserWorkbenchEnvironmentService implements IBrowserWorkbenchEnvi
+ 	@memoize
+-	get skipWelcome(): boolean { return this.payload?.get('skipWelcome') === 'true'; }
++	get skipWelcome(): boolean { return true; }
+ 
+diff --git a/src/vs/workbench/services/environment/electron-browser/environmentService.ts b/src/vs/workbench/services/environment/electron-browser/environmentService.ts
+index 6cfa51701be..6470f5ce1b0 100644
+--- a/src/vs/workbench/services/environment/electron-browser/environmentService.ts
++++ b/src/vs/workbench/services/environment/electron-browser/environmentService.ts
+@@ -113,3 +113,3 @@ export class NativeWorkbenchEnvironmentService extends AbstractNativeEnvironment
+ 	@memoize
+-	get skipWelcome(): boolean { return !!this.args['skip-welcome']; }
++	get skipWelcome(): boolean { return true; }
+ 
