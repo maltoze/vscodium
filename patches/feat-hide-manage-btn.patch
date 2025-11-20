@@ -1,7 +1,12 @@
 diff --git a/src/vs/workbench/browser/parts/globalCompositeBar.ts b/src/vs/workbench/browser/parts/globalCompositeBar.ts
-index 48220d63dc3..fefc1de4ba7 100644
+index 48220d63dc3..18b09da6869 100644
 --- a/src/vs/workbench/browser/parts/globalCompositeBar.ts
 +++ b/src/vs/workbench/browser/parts/globalCompositeBar.ts
+@@ -54,3 +54,3 @@ export class GlobalCompositeBar extends Disposable {
+ 
+-	private readonly globalActivityAction = this._register(new Action(GLOBAL_ACTIVITY_ID));
++	// private readonly globalActivityAction = this._register(new Action(GLOBAL_ACTIVITY_ID));
+ 	private readonly accountAction = this._register(new Action(ACCOUNTS_ACTIVITY_ID));
 @@ -100,16 +100,15 @@ export class GlobalCompositeBar extends Disposable {
  			orientation: ActionsOrientation.VERTICAL,
 -			ariaLabel: localize('manage', "Manage"),
