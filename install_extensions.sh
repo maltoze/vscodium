@@ -14,9 +14,9 @@ echo "Installing Claude Code extension to VSCodium application..."
 
 # Determine the app path based on platform
 if [[ -d "VSCode-darwin-arm64" ]]; then
-  APP_PATH="VSCode-darwin-arm64/VSCodium.app/Contents/Resources/app"
+  APP_PATH="VSCode-darwin-arm64/DeployAI Studio.app/Contents/Resources/app"
 elif [[ -d "VSCode-darwin-x64" ]]; then
-  APP_PATH="VSCode-darwin-x64/VSCodium.app/Contents/Resources/app"
+  APP_PATH="VSCode-darwin-x64/DeployAI Studio.app/Contents/Resources/app"
 elif [[ -d "VSCode-linux-x64" ]]; then
   APP_PATH="VSCode-linux-x64/resources/app"
 elif [[ -d "VSCode-linux-arm64" ]]; then
