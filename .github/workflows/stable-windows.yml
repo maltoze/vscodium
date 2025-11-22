@@ -25,7 +25,7 @@ on:
     - '**/*.md'
 
 env:
-  APP_NAME: VSCodium
+  APP_NAME: DeployAI Studio
   ASSETS_REPOSITORY: ${{ github.repository }}
   BINARY_NAME: codium
   GH_REPO_PATH: ${{ github.repository }}
