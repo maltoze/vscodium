@@ -35,6 +35,7 @@ env:
   VSCODE_QUALITY: stable
   SHOULD_BUILD_MSI: no
   SHOULD_BUILD_CLI: no
+  SHOULD_BUILD_MSI_NOUP: no
 
 jobs:
   check:
