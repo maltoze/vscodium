@@ -58,8 +58,48 @@ index 8cb60a057b8..8b7c0172001 100644
 +		}
 +	}
  }
+diff --git a/src/vs/workbench/browser/parts/titlebar/media/titlebarpart.css b/src/vs/workbench/browser/parts/titlebar/media/titlebarpart.css
+index 0246cd2ad10..16174d3a4d8 100644
+--- a/src/vs/workbench/browser/parts/titlebar/media/titlebarpart.css
++++ b/src/vs/workbench/browser/parts/titlebar/media/titlebarpart.css
+@@ -467 +467,35 @@
+ }
++
++/* Balance Action Buttons - Common Style */
++.monaco-workbench .part.titlebar a.action-label[aria-label*="View Balance"],
++.monaco-workbench .part.titlebar a.action-label[aria-label*="查看余额"],
++.monaco-workbench .part.titlebar a.action-label[aria-label*="Low Balance"],
++.monaco-workbench .part.titlebar a.action-label[aria-label*="余额不足"] {
++	background-color: rgba(127, 127, 127, 0.2) !important;
++	padding: 2px 12px !important;
++	border-radius: 4px !important;
++	font-weight: 500 !important;
++	transition: background-color 0.2s ease !important;
++}
++
++/* View Balance - Normal Style */
++.monaco-workbench .part.titlebar a.action-label[aria-label*="View Balance"],
++.monaco-workbench .part.titlebar a.action-label[aria-label*="查看余额"] {
++	color: inherit !important;
++}
++
++.monaco-workbench .part.titlebar a.action-label[aria-label*="View Balance"]:hover,
++.monaco-workbench .part.titlebar a.action-label[aria-label*="查看余额"]:hover {
++	background-color: rgba(127, 127, 127, 0.3) !important;
++}
++
++/* Low Balance - Red Text */
++.monaco-workbench .part.titlebar a.action-label[aria-label*="Low Balance"],
++.monaco-workbench .part.titlebar a.action-label[aria-label*="余额不足"] {
++	color: #f14c4c !important;
++}
++
++.monaco-workbench .part.titlebar a.action-label[aria-label*="Low Balance"]:hover,
++.monaco-workbench .part.titlebar a.action-label[aria-label*="余额不足"]:hover {
++	background-color: rgba(127, 127, 127, 0.3) !important;
++}
 diff --git a/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts b/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts
-index f8e5e74bf6b..72ad11e2645 100644
+index f8e5e74bf6b..7ae4e57f964 100644
 --- a/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts
 +++ b/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts
 @@ -10,3 +10,3 @@ import { IStorageService, StorageScope, StorageTarget } from '../../../../platfo
@@ -82,7 +122,7 @@ index f8e5e74bf6b..72ad11e2645 100644
 +// Account Button (shown when logged in) - using submenu for proper positioning
 +MenuRegistry.appendMenuItem(MenuId.TitleBar, {
 +	submenu: AccountMenuId,
-+	title: { value: 'My Account', original: 'My Account' },
++	title: localize2('myAccount', 'My Account'),
 +	icon: { id: 'account' },
 +	group: 'navigation',
 +	order: 1001,
@@ -94,7 +134,7 @@ index f8e5e74bf6b..72ad11e2645 100644
 +	constructor() {
 +		super({
 +			id: 'workbench.action.login',
-+			title: { value: 'Log In', original: 'Log In' },
++			title: localize2('login', 'Log In'),
 +			menu: {
 +				id: MenuId.TitleBar,
 +				when: ContextKeyExpr.equals('isLoggedIn', false),
@@ -124,7 +164,7 @@ index f8e5e74bf6b..72ad11e2645 100644
 +	constructor() {
 +		super({
 +			id: 'workbench.action.viewBalanceMenu',
-+			title: { value: 'View Balance', original: 'View Balance' },
++			title: localize2('viewBalance', 'View Balance'),
 +			menu: {
 +				id: AccountMenuId,
 +				group: 'account',
@@ -150,7 +190,7 @@ index f8e5e74bf6b..72ad11e2645 100644
 +	constructor() {
 +		super({
 +			id: 'workbench.action.logout',
-+			title: { value: 'Log Out', original: 'Log Out' },
++			title: localize2('logout', 'Log Out'),
 +			menu: {
 +				id: AccountMenuId,
 +				group: 'account',
@@ -179,7 +219,7 @@ index f8e5e74bf6b..72ad11e2645 100644
 +	constructor() {
 +		super({
 +			id: 'workbench.action.viewBalance',
-+			title: { value: 'View Balance', original: 'View Balance' },
++			title: localize2('viewBalance', 'View Balance'),
 +			menu: {
 +				id: MenuId.TitleBar,
 +				when: ContextKeyExpr.equals('isLowBalance', false),
@@ -206,7 +246,7 @@ index f8e5e74bf6b..72ad11e2645 100644
 +	constructor() {
 +		super({
 +			id: 'workbench.action.lowBalance',
-+			title: { value: 'Low Balance', original: 'Low Balance' },
++			title: localize2('lowBalance', 'Low Balance, please recharge'),
 +			menu: {
 +				id: MenuId.TitleBar,
 +				when: ContextKeyExpr.equals('isLowBalance', true),
@@ -229,7 +269,7 @@ index f8e5e74bf6b..72ad11e2645 100644
 +});
 diff --git a/src/vs/workbench/common/deployai365.ts b/src/vs/workbench/common/deployai365.ts
 new file mode 100644
-index 00000000000..0540eddeeb3
+index 00000000000..94c213a8755
 --- /dev/null
 +++ b/src/vs/workbench/common/deployai365.ts
 @@ -0,0 +1,18 @@
@@ -246,7 +286,7 @@ index 00000000000..0540eddeeb3
 +export const TOKEN_STORAGE_KEY = 'deployai365.auth.token';
 +export const SUB_KEY_STORAGE_KEY = 'deployai365.auth.subKey';
 +export const BALANCE_STORAGE_KEY = 'deployai365.auth.balance';
-+export const CALLBACK_SCHEME = 'vscodium';
++export const CALLBACK_SCHEME = 'code-oss';
 +export const CALLBACK_AUTHORITY = 'deployai365.auth';
 +export const CALLBACK_PATH = '/callback';
 +export const USER_INFO_API = `https://launch-api.deployai365.com/api/work-user/${INSTANCE_ID}`;
@@ -287,10 +327,10 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..380f5f13414
+index 00000000000..64ce93491ca
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,1260 @@
+@@ -0,0 +1,1166 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -319,16 +359,16 @@ index 00000000000..380f5f13414
 +import { IFileService } from '../../../../platform/files/common/files.js';
 +import { VSBuffer } from '../../../../base/common/buffer.js';
 +import { IPathService } from '../../../services/path/common/pathService.js';
-+import { isWindows } from '../../../../base/common/platform.js';
++import { isWindows, Language } from '../../../../base/common/platform.js';
 +import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 +import { IHostService } from '../../../services/host/browser/host.js';
 +import { IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
 +import { INSTANCE_ID, TOKEN_STORAGE_KEY, SUB_KEY_STORAGE_KEY, BALANCE_STORAGE_KEY, CALLBACK_SCHEME, CALLBACK_AUTHORITY, CALLBACK_PATH, USER_INFO_API, API_ENDPOINT } from '../../../common/deployai365.js';
++import { ILocaleService } from '../../../services/localization/common/locale.js';
++import { localize2 } from '../../../../nls.js';
 +
 +const IsLowBalanceContext = new RawContextKey<boolean>('isLowBalance', false);
 +const IsLoggedInContext = new RawContextKey<boolean>('isLoggedIn', false);
-+
-+const LANGUAGE_STORAGE_KEY = 'workbench.startupSplash.language';
 +
 +export class StartupSplashContribution
 +	extends Disposable
@@ -336,13 +376,13 @@ index 00000000000..380f5f13414
 +	static readonly ID = 'workbench.contrib.startupSplash';
 +
 +	private splashContainer: HTMLElement | undefined;
-+	private currentLang = 'zh';
 +	private currentSlide = 0;
 +	private carouselInterval: any;
 +	private balanceCheckInterval: any;
 +	private userName: string | undefined;
 +	private totalAmount: number | undefined;
 +	private isLoadingUserInfo = false;
++	private currentLanguage: 'zh' | 'en' = 'en';
 +	private isLowBalanceContextKey: ReturnType<typeof IsLowBalanceContext.bindTo>;
 +	private isLoggedInContextKey: ReturnType<typeof IsLoggedInContext.bindTo>;
 +
@@ -356,7 +396,8 @@ index 00000000000..380f5f13414
 +		@IPathService private readonly pathService: IPathService,
 +		@IDialogService private readonly dialogService: IDialogService,
 +		@IHostService private readonly hostService: IHostService,
-+		@IContextKeyService contextKeyService: IContextKeyService
++		@IContextKeyService contextKeyService: IContextKeyService,
++		@ILocaleService private readonly localeService: ILocaleService
 +	) {
 +		super();
 +		this.isLowBalanceContextKey = IsLowBalanceContext.bindTo(contextKeyService);
@@ -368,15 +409,16 @@ index 00000000000..380f5f13414
 +	}
 +
 +	private async init(): Promise<void> {
-+		const savedLanguage = this.storageService.get(
-+			LANGUAGE_STORAGE_KEY,
-+			StorageScope.APPLICATION
-+		);
-+		this.currentLang = savedLanguage || 'zh';
-+
++		this.initializeLanguage();
 +		this.registerUrlHandler();
 +		this.showSplash();
 +		this.startBalanceCheck();
++	}
++
++	private initializeLanguage(): void {
++		// Get current language from VSCode
++		const currentLocale = Language.value() || 'en';
++		this.currentLanguage = currentLocale.startsWith('zh') ? 'zh' : 'en';
 +	}
 +
 +	private showSplash(): void {
@@ -396,12 +438,12 @@ index 00000000000..380f5f13414
 +		langBtn.id = 'langSwitch';
 +		langBtn.className = 'lang-switch-btn';
 +		const globeIcon = document.createElement('span');
-+		globeIcon.className = 'globe-icon';
-+		globeIcon.textContent = '🌐';
++		globeIcon.className = 'codicon codicon-globe';
 +		const langDisplay = document.createElement('span');
 +		langDisplay.id = 'langDisplay';
-+		langDisplay.textContent =
-+			this.currentLang === 'zh' ? '中文' : 'English';
++		langDisplay.className = 'lang-display';
++		langDisplay.textContent = this.currentLanguage === 'zh' ? '中文' : 'English';
++		langBtn.title = localize2('toggleLanguage', 'Toggle Language').value;
 +		langBtn.appendChild(globeIcon);
 +		langBtn.appendChild(langDisplay);
 +		langSwitch.appendChild(langBtn);
@@ -471,27 +513,15 @@ index 00000000000..380f5f13414
 +			img.className = 'slide-image';
 +			slide.appendChild(img);
 +
-+			const titleZh = document.createElement('h2');
-+			titleZh.className = 'slide-title lang-zh';
-+			titleZh.textContent = slideData.titleZh;
-+			slide.appendChild(titleZh);
++			const title = document.createElement('h2');
++			title.className = 'slide-title';
++			title.textContent = slideData.titleZh;
++			slide.appendChild(title);
 +
-+			const titleEn = document.createElement('h2');
-+			titleEn.className = 'slide-title lang-en';
-+			titleEn.style.display = 'none';
-+			titleEn.textContent = slideData.titleEn;
-+			slide.appendChild(titleEn);
-+
-+			const textZh = document.createElement('p');
-+			textZh.className = 'slide-text lang-zh';
-+			textZh.textContent = slideData.textZh;
-+			slide.appendChild(textZh);
-+
-+			const textEn = document.createElement('p');
-+			textEn.className = 'slide-text lang-en';
-+			textEn.style.display = 'none';
-+			textEn.textContent = slideData.textEn;
-+			slide.appendChild(textEn);
++			const text = document.createElement('p');
++			text.className = 'slide-text';
++			text.textContent = slideData.textZh;
++			slide.appendChild(text);
 +
 +			carouselContainer.appendChild(slide);
 +		});
@@ -513,18 +543,13 @@ index 00000000000..380f5f13414
 +		const startButton = document.createElement('button');
 +		startButton.id = 'startButton';
 +		startButton.className = 'start-button';
-+		const btnTextZh = document.createElement('span');
-+		btnTextZh.className = 'lang-zh';
-+		btnTextZh.textContent = '启动 Claude Code';
-+		const btnTextEn = document.createElement('span');
-+		btnTextEn.className = 'lang-en';
-+		btnTextEn.style.display = 'none';
-+		btnTextEn.textContent = 'Launch Claude Code';
++		const btnText = document.createElement('span');
++		btnText.className = 'button-text';
++		btnText.textContent = localize2('launchClaudeCode', 'Launch Claude Code').value;
 +		const arrowIcon = document.createElement('span');
 +		arrowIcon.className = 'arrow-icon';
 +		arrowIcon.textContent = '→';
-+		startButton.appendChild(btnTextZh);
-+		startButton.appendChild(btnTextEn);
++		startButton.appendChild(btnText);
 +		startButton.appendChild(arrowIcon);
 +
 +		// Initialize button state based on token
@@ -537,8 +562,7 @@ index 00000000000..380f5f13414
 +			this.isLoadingUserInfo = true;
 +			startButton.disabled = true;
 +			startButton.classList.add('loading');
-+			btnTextZh.textContent = '加载中...';
-+			btnTextEn.textContent = 'Loading...';
++			btnText.textContent = localize2('loading', 'Loading...').value;
 +			arrowIcon.style.display = 'none';
 +		}
 +
@@ -552,25 +576,15 @@ index 00000000000..380f5f13414
 +		loginStatus.className = 'login-status';
 +		const userIcon = document.createElement('span');
 +		userIcon.className = `user-icon codicon codicon-${Codicon.account.id}`;
-+		const statusTextZh = document.createElement('span');
-+		statusTextZh.className = 'lang-zh';
-+		statusTextZh.textContent = '未登录';
-+		const statusTextEn = document.createElement('span');
-+		statusTextEn.className = 'lang-en';
-+		statusTextEn.style.display = 'none';
-+		statusTextEn.textContent = 'Not logged in';
-+		const hintZh = document.createElement('span');
-+		hintZh.className = 'login-hint lang-zh';
-+		hintZh.textContent = '(点击登录)';
-+		const hintEn = document.createElement('span');
-+		hintEn.className = 'login-hint lang-en';
-+		hintEn.style.display = 'none';
-+		hintEn.textContent = '(Click to login)';
++		const statusText = document.createElement('span');
++		statusText.className = 'status-text';
++		statusText.textContent = localize2('notLoggedIn', 'Not logged in').value;
++		const hint = document.createElement('span');
++		hint.className = 'login-hint';
++		hint.textContent = localize2('clickToLogin', '(Click to login)').value;
 +		loginStatus.appendChild(userIcon);
-+		loginStatus.appendChild(statusTextZh);
-+		loginStatus.appendChild(statusTextEn);
-+		loginStatus.appendChild(hintZh);
-+		loginStatus.appendChild(hintEn);
++		loginStatus.appendChild(statusText);
++		loginStatus.appendChild(hint);
 +		statusInfo.appendChild(loginStatus);
 +		splashContent.appendChild(statusInfo);
 +
@@ -596,7 +610,7 @@ index 00000000000..380f5f13414
 +		this.applyStyles();
 +		this.createStars();
 +		this.addEventListeners();
-+		this.updateLoginStatus();
++		this.updateLoginStatus(false);
 +		this.setupCarousel();
 +	}
 +
@@ -723,8 +737,8 @@ index 00000000000..380f5f13414
 +		) as HTMLElement;
 +		if (langSwitch) {
 +			this._register(
-+				addDisposableListener(langSwitch, EventType.CLICK, () => {
-+					this.toggleLanguage();
++				addDisposableListener(langSwitch, EventType.CLICK, async () => {
++					await this.toggleLanguage();
 +				})
 +			);
 +		}
@@ -750,53 +764,26 @@ index 00000000000..380f5f13414
 +				})
 +			);
 +		}
-+
-+		const targetWindow = getWindow(this.splashContainer);
-+		this._register(
-+			addDisposableListener(
-+				targetWindow.document,
-+				EventType.KEY_DOWN,
-+				(e: KeyboardEvent) => {
-+					if (e.key === 'Enter' || e.key === ' ') {
-+						e.preventDefault();
-+						this.handleStartButtonClick();
-+					}
-+				}
-+			)
-+		);
 +	}
 +
-+	private toggleLanguage(): void {
-+		this.currentLang = this.currentLang === 'zh' ? 'en' : 'zh';
++	private async toggleLanguage(): Promise<void> {
++		try {
++			// Determine target language (toggle between Chinese and English)
++			const targetLocale = this.currentLanguage === 'en' ? 'zh-cn' : 'en';
 +
-+		this.storageService.store(
-+			LANGUAGE_STORAGE_KEY,
-+			this.currentLang,
-+			StorageScope.APPLICATION,
-+			StorageTarget.MACHINE
-+		);
++			// Switch to target language
++			const languagePackItem = {
++				id: targetLocale,
++				label: targetLocale === 'zh-cn' ? '中文' : 'English',
++				galleryExtension: undefined,
++				extensionId: undefined
++			};
 +
-+		const langDisplay = this.splashContainer?.querySelector(
-+			'#langDisplay'
-+		) as HTMLElement;
-+		if (langDisplay) {
-+			langDisplay.textContent =
-+				this.currentLang === 'zh' ? '中文' : 'English';
-+		}
-+
-+		const zhElements = this.splashContainer?.querySelectorAll(
-+			'.lang-zh'
-+		) as NodeListOf<HTMLElement>;
-+		const enElements = this.splashContainer?.querySelectorAll(
-+			'.lang-en'
-+		) as NodeListOf<HTMLElement>;
-+
-+		if (this.currentLang === 'zh') {
-+			zhElements.forEach((el) => (el.style.display = ''));
-+			enElements.forEach((el) => (el.style.display = 'none'));
-+		} else {
-+			zhElements.forEach((el) => (el.style.display = 'none'));
-+			enElements.forEach((el) => (el.style.display = ''));
++			// Use VSCode's locale service to switch language
++			// This will restart the application
++			await this.localeService.setLocale(languagePackItem, false);
++		} catch (error) {
++			console.error('Error toggling language:', error);
 +		}
 +	}
 +
@@ -864,7 +851,7 @@ index 00000000000..380f5f13414
 +		}, 300);
 +	}
 +
-+	private async updateLoginStatus(): Promise<void> {
++	private async updateLoginStatus(allowOpenExternal: boolean = true): Promise<void> {
 +		if (!this.splashContainer) {
 +			return;
 +		}
@@ -872,26 +859,17 @@ index 00000000000..380f5f13414
 +			TOKEN_STORAGE_KEY,
 +			StorageScope.APPLICATION
 +		);
-+		const statusZh = this.splashContainer.querySelector(
-+			'#loginStatus .lang-zh'
++		const statusText = this.splashContainer.querySelector(
++			'#loginStatus .status-text'
 +		) as HTMLElement | null;
-+		const statusEn = this.splashContainer.querySelector(
-+			'#loginStatus .lang-en'
-+		) as HTMLElement | null;
-+		const hintZh = this.splashContainer.querySelector(
-+			'#loginStatus .login-hint.lang-zh'
-+		) as HTMLElement | null;
-+		const hintEn = this.splashContainer.querySelector(
-+			'#loginStatus .login-hint.lang-en'
++		const hint = this.splashContainer.querySelector(
++			'#loginStatus .login-hint'
 +		) as HTMLElement | null;
 +		const startButton = this.splashContainer.querySelector(
 +			'#startButton'
 +		) as HTMLButtonElement | null;
-+		const btnTextZh = startButton?.querySelector(
-+			'.lang-zh'
-+		) as HTMLElement | null;
-+		const btnTextEn = startButton?.querySelector(
-+			'.lang-en'
++		const btnText = startButton?.querySelector(
++			'.button-text'
 +		) as HTMLElement | null;
 +		const arrowIcon = startButton?.querySelector(
 +			'.arrow-icon'
@@ -903,11 +881,8 @@ index 00000000000..380f5f13414
 +				startButton.disabled = true;
 +				startButton.classList.add('loading');
 +			}
-+			if (btnTextZh) {
-+				btnTextZh.textContent = '加载中...';
-+			}
-+			if (btnTextEn) {
-+				btnTextEn.textContent = 'Loading...';
++			if (btnText) {
++				btnText.textContent = localize2('loading', 'Loading...').value;
 +			}
 +			if (arrowIcon) {
 +				arrowIcon.style.display = 'none';
@@ -924,22 +899,25 @@ index 00000000000..380f5f13414
 +				});
 +
 +				if (response.status === 401) {
-+					// Token invalid, trigger login
++					// Token invalid, remove it
 +					this.storageService.remove(
 +						TOKEN_STORAGE_KEY,
 +						StorageScope.APPLICATION
 +					);
-+					const callback = URI.from({
-+						scheme: CALLBACK_SCHEME,
-+						authority: CALLBACK_AUTHORITY,
-+						path: CALLBACK_PATH,
-+					});
-+					const loginUrl = `https://login.deployai365.com/?platform=cline&originUrl=${encodeURIComponent(
-+						callback.toString()
-+					)}`;
-+					this.openerService.open(URI.parse(loginUrl), {
-+						openExternal: true,
-+					});
++					// Only open login page if allowed
++					if (allowOpenExternal) {
++						const callback = URI.from({
++							scheme: CALLBACK_SCHEME,
++							authority: CALLBACK_AUTHORITY,
++							path: CALLBACK_PATH,
++						});
++						const loginUrl = `https://login.deployai365.com/?platform=cline&originUrl=${encodeURIComponent(
++							callback.toString()
++						)}`;
++						this.openerService.open(URI.parse(loginUrl), {
++							openExternal: true,
++						});
++					}
 +					return;
 +				}
 +
@@ -948,36 +926,18 @@ index 00000000000..380f5f13414
 +					this.userName = data?.data?.user_name;
 +					this.totalAmount = data?.data?.total_amount;
 +
-+					if (this.userName) {
-+						if (statusZh) {
-+							statusZh.textContent = this.userName;
-+						}
-+						if (statusEn) {
-+							statusEn.textContent = this.userName;
-+						}
-+					} else {
-+						if (statusZh) {
-+							statusZh.textContent = '已登录';
-+						}
-+						if (statusEn) {
-+							statusEn.textContent = 'Logged in';
-+						}
++					if (this.userName && statusText) {
++						statusText.textContent = this.userName;
++					} else if (statusText) {
++						statusText.textContent = localize2('loggedIn', 'Logged in').value;
 +					}
-+				} else {
-+					if (statusZh) {
-+						statusZh.textContent = '已登录';
-+					}
-+					if (statusEn) {
-+						statusEn.textContent = 'Logged in';
-+					}
++				} else if (statusText) {
++					statusText.textContent = localize2('loggedIn', 'Logged in').value;
 +				}
 +			} catch (error) {
 +				console.error('Error fetching user info:', error);
-+				if (statusZh) {
-+					statusZh.textContent = '已登录';
-+				}
-+				if (statusEn) {
-+					statusEn.textContent = 'Logged in';
++				if (statusText) {
++					statusText.textContent = localize2('loggedIn', 'Logged in').value;
 +				}
 +			}
 +
@@ -987,34 +947,22 @@ index 00000000000..380f5f13414
 +				startButton.disabled = false;
 +				startButton.classList.remove('loading');
 +			}
-+			if (btnTextZh) {
-+				btnTextZh.textContent = '启动 Claude Code';
-+			}
-+			if (btnTextEn) {
-+				btnTextEn.textContent = 'Launch Claude Code';
++			if (btnText) {
++				btnText.textContent = localize2('launchClaudeCode', 'Launch Claude Code').value;
 +			}
 +			if (arrowIcon) {
 +				arrowIcon.style.display = '';
 +			}
 +
-+			if (hintZh) {
-+				hintZh.style.display = 'none';
-+			}
-+			if (hintEn) {
-+				hintEn.style.display = 'none';
++			if (hint) {
++				hint.style.display = 'none';
 +			}
 +		} else {
-+			if (statusZh) {
-+				statusZh.textContent = '未登录';
++			if (statusText) {
++				statusText.textContent = localize2('notLoggedIn', 'Not logged in').value;
 +			}
-+			if (statusEn) {
-+				statusEn.textContent = 'Not logged in';
-+			}
-+			if (hintZh) {
-+				hintZh.style.display = this.currentLang === 'zh' ? '' : 'none';
-+			}
-+			if (hintEn) {
-+				hintEn.style.display = this.currentLang === 'en' ? '' : 'none';
++			if (hint) {
++				hint.style.display = '';
 +			}
 +		}
 +	}
@@ -1046,6 +994,7 @@ index 00000000000..380f5f13414
 +					await this.checkUserAndSubscription(token);
 +					this.updateLoginStatus();
 +					this.hideSplash();
++					this.startBalanceCheck();
 +					return true;
 +				}
 +				return false;
@@ -1055,21 +1004,12 @@ index 00000000000..380f5f13414
 +	}
 +
 +	private showInsufficientBalanceDialog(token: string): void {
-+		const message =
-+			this.currentLang === 'zh'
-+				? '余额不足，请充值'
-+				: 'Insufficient balance, please recharge';
-+		const detail =
-+			this.currentLang === 'zh'
-+				? '您的账户余额不足，点击确定前往充值页面。'
-+				: 'Your account balance is insufficient. Click OK to go to the recharge page.';
-+
 +		this.dialogService
 +			.confirm({
-+				message,
-+				detail,
-+				primaryButton: this.currentLang === 'zh' ? '确定' : 'OK',
-+				cancelButton: this.currentLang === 'zh' ? '取消' : 'Cancel',
++				message: localize2('insufficientBalance', 'Insufficient balance, please recharge').value,
++				detail: localize2('insufficientBalanceDetail', 'Your account balance is insufficient. Click OK to go to the recharge page.').value,
++				primaryButton: localize2('ok', 'OK').value,
++				cancelButton: localize2('cancel', 'Cancel').value,
 +			})
 +			.then((result) => {
 +				if (result.confirmed) {
@@ -1281,11 +1221,17 @@ index 00000000000..380f5f13414
 +				font-size: 14px;
 +				display: flex;
 +				align-items: center;
-+				gap: 4px;
++				justify-content: center;
++				gap: 6px;
 +			}
 +
 +			.lang-switch-btn:hover {
 +				background-color: #374151;
++			}
++
++			.lang-display {
++				font-size: 12px;
++				font-weight: 500;
 +			}
 +
 +			.splash-content {
