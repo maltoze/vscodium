@@ -36,6 +36,7 @@ env:
   SHOULD_BUILD_MSI: no
   SHOULD_BUILD_CLI: no
   SHOULD_BUILD_MSI_NOUP: no
+  DISABLE_UPDATE: 'yes'
 
 jobs:
   check:
