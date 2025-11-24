@@ -92,7 +92,7 @@ function startCLIService(context) {
 
     // Start CLI service
     console.log('[Startup Claude] Starting CLI service...');
-    cliProcess = spawn(cliBinary, ['start'], {
+    cliProcess = spawn(cliBinary, ['restart'], {
         detached: true,
         stdio: ['ignore', 'pipe', 'pipe'],
         env: { ...process.env }

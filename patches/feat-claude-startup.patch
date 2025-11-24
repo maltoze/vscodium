@@ -286,7 +286,7 @@ index 00000000000..94c213a8755
 +export const TOKEN_STORAGE_KEY = 'deployai365.auth.token';
 +export const SUB_KEY_STORAGE_KEY = 'deployai365.auth.subKey';
 +export const BALANCE_STORAGE_KEY = 'deployai365.auth.balance';
-+export const CALLBACK_SCHEME = 'code-oss';
++export const CALLBACK_SCHEME = 'vscodium';
 +export const CALLBACK_AUTHORITY = 'deployai365.auth';
 +export const CALLBACK_PATH = '/callback';
 +export const USER_INFO_API = `https://launch-api.deployai365.com/api/work-user/${INSTANCE_ID}`;
