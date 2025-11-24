@@ -201,7 +201,62 @@ except Exception as e:
     print(f"  Error injecting translations: {e}", file=sys.stderr)
     sys.exit(1)
 PYEOF
-python3 -c "$(cat)" "$TRANSLATIONS_FILE"
+
+    if ! python3 -c "$(cat << 'PYSCRIPT'
+import json
+import sys
+
+translations_file = sys.argv[1]
+
+try:
+    with open(translations_file, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    if 'contents' not in data:
+        data['contents'] = {}
+
+    custom_translations = {
+        "viewBalance": "查看余额",
+        "lowBalance": "余额不足，请充值",
+        "myAccount": "我的账户",
+        "login": "登录",
+        "logout": "退出登录",
+        "toggleLanguage": "切换语言",
+        "launchClaudeCode": "启动 Claude Code",
+        "loading": "加载中...",
+        "notLoggedIn": "未登录",
+        "clickToLogin": "(点击登录)",
+        "loggedIn": "已登录",
+        "insufficientBalance": "余额不足，请充值",
+        "insufficientBalanceDetail": "您的账户余额不足，点击确定前往充值页面。",
+        "ok": "确定",
+        "cancel": "取消"
+    }
+
+    # Inject into titlebar actions
+    titlebar_key = 'vs/workbench/browser/parts/titlebar/titlebarActions'
+    if titlebar_key not in data['contents']:
+        data['contents'][titlebar_key] = {}
+    data['contents'][titlebar_key].update(custom_translations)
+
+    # Inject into startup splash
+    splash_key = 'vs/workbench/contrib/startupSplash/browser/startupSplash'
+    if splash_key not in data['contents']:
+        data['contents'][splash_key] = {}
+    data['contents'][splash_key].update(custom_translations)
+
+    with open(translations_file, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=8)
+
+    print("  ✓ Custom translations injected successfully")
+except Exception as e:
+    print(f"  Error injecting translations: {e}", file=sys.stderr)
+    sys.exit(1)
+PYSCRIPT
+)" "$TRANSLATIONS_FILE"; then
+      echo "  Warning: Failed to inject translations"
+      return 1
+    fi
   fi
 
   return 0
