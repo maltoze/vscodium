@@ -218,7 +218,9 @@ PYEOF
       echo "  Warning: Failed to inject translations"
       return 1
     fi
-  fi  return 0
+  fi
+
+  return 0
 }
 
 # Determine platform for download
