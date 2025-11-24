@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -e
+# Don't exit on error - we want to try installing all extensions
+set +ex
 
 OPEN_VSX_API="https://open-vsx.org/api"
 # Use TEMP/TMP on Windows, TMPDIR on Unix
@@ -247,8 +248,13 @@ echo "Extensions dir: ${EXTENSIONS_DIR}"
 INSTALLED_COUNT=0
 FAILED_COUNT=0
 
+echo ""
+echo "Total extensions to install: ${#EXTENSIONS[@]}"
+
 for EXTENSION_INFO in "${EXTENSIONS[@]}"; do
   IFS='|' read -r EXTENSION_ID PUBLISHER EXTENSION_NAME EXTENSION_VERSION PLATFORM_SPECIFIC <<< "$EXTENSION_INFO"
+
+  echo "Processing: ${EXTENSION_ID}"
 
   if install_extension "$EXTENSION_ID" "$PUBLISHER" "$EXTENSION_NAME" "$EXTENSION_VERSION" "$PLATFORM_SPECIFIC"; then
     ((INSTALLED_COUNT++))
