@@ -269,7 +269,7 @@ index f8e5e74bf6b..7ae4e57f964 100644
 +});
 diff --git a/src/vs/workbench/common/deployai365.ts b/src/vs/workbench/common/deployai365.ts
 new file mode 100644
-index 00000000000..94c213a8755
+index 00000000000..0540eddeeb3
 --- /dev/null
 +++ b/src/vs/workbench/common/deployai365.ts
 @@ -0,0 +1,18 @@
@@ -327,10 +327,10 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..64ce93491ca
+index 00000000000..efe114ad6f7
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,1166 @@
+@@ -0,0 +1,1227 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -370,6 +370,20 @@ index 00000000000..64ce93491ca
 +const IsLowBalanceContext = new RawContextKey<boolean>('isLowBalance', false);
 +const IsLoggedInContext = new RawContextKey<boolean>('isLoggedIn', false);
 +
++const BANNER_API = 'https://launch-api.deployai365.com/api/banner/list?scene=ClaudeCodeDownload';
++
++interface BannerData {
++	id: number;
++	title_zh: string;
++	title_en: string;
++	description_zh: string;
++	description_en: string;
++	image: string;
++	link_url?: string;
++	sort_order: number;
++	status: string;
++}
++
 +export class StartupSplashContribution
 +	extends Disposable
 +	implements IWorkbenchContribution {
@@ -385,6 +399,45 @@ index 00000000000..64ce93491ca
 +	private currentLanguage: 'zh' | 'en' = 'en';
 +	private isLowBalanceContextKey: ReturnType<typeof IsLowBalanceContext.bindTo>;
 +	private isLoggedInContextKey: ReturnType<typeof IsLoggedInContext.bindTo>;
++	private slidesData: BannerData[] = [];
++	private defaultSlides = [
++		{
++			id: 1,
++			imageUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80',
++			titleZh: '智能代码补全',
++			titleEn: 'Intelligent Code Completion',
++			textZh: '通过先进的 AI 模型，Claude Code 能够理解您的代码上下文，提供精准的代码建议',
++			textEn: 'Using advanced AI models, Claude Code understands your code context and provides precise code suggestions',
++			linkUrl: undefined,
++		},
++		{
++			id: 2,
++			imageUrl: 'https://images.unsplash.com/photo-1552308995-2baac1ad5490?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80',
++			titleZh: '实时协作',
++			titleEn: 'Real-time Collaboration',
++			textZh: '与团队成员无缝协作，共享代码、注释和想法，提高开发效率',
++			textEn: 'Seamlessly collaborate with team members, share code, comments and ideas to improve development efficiency',
++			linkUrl: undefined,
++		},
++		{
++			id: 3,
++			imageUrl: 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80',
++			titleZh: '代码分析与优化',
++			titleEn: 'Code Analysis & Optimization',
++			textZh: '自动检测潜在问题并提供改进建议，让您的代码更高效、更安全',
++			textEn: 'Automatically detect potential issues and provide improvement suggestions to make your code more efficient and secure',
++			linkUrl: undefined,
++		},
++		{
++			id: 4,
++			imageUrl: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80',
++			titleZh: '多语言支持',
++			titleEn: 'Multi-language Support',
++			textZh: '支持 Python、JavaScript、Java、C++ 等多种主流编程语言，满足不同开发需求',
++			textEn: 'Supports Python, JavaScript, Java, C++ and other mainstream programming languages to meet various development needs',
++			linkUrl: undefined,
++		},
++	];
 +
 +	constructor(
 +		@IWorkbenchLayoutService
@@ -411,6 +464,7 @@ index 00000000000..64ce93491ca
 +	private async init(): Promise<void> {
 +		this.initializeLanguage();
 +		this.registerUrlHandler();
++		await this.fetchBannerData();
 +		this.showSplash();
 +		this.startBalanceCheck();
 +	}
@@ -419,6 +473,24 @@ index 00000000000..64ce93491ca
 +		// Get current language from VSCode
 +		const currentLocale = Language.value() || 'en';
 +		this.currentLanguage = currentLocale.startsWith('zh') ? 'zh' : 'en';
++	}
++
++	private async fetchBannerData(): Promise<void> {
++		try {
++			const response = await fetch(BANNER_API);
++			if (response.ok) {
++				const result = await response.json();
++				if (result.code === 20000 && Array.isArray(result.data)) {
++					// Filter active banners and sort by sort_order
++					this.slidesData = result.data
++						.filter((banner: BannerData) => banner.status === 'active')
++						.sort((a: BannerData, b: BannerData) => a.sort_order - b.sort_order);
++				}
++			}
++		} catch (error) {
++			console.error('Error fetching banner data:', error);
++			// Keep slidesData empty to use default slides
++		}
 +	}
 +
 +	private showSplash(): void {
@@ -468,40 +540,17 @@ index 00000000000..64ce93491ca
 +		const carouselContainer = document.createElement('div');
 +		carouselContainer.className = 'carousel-container';
 +
-+		const slides = [
-+			{
-+				imageUrl:
-+					'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80',
-+				titleZh: '智能代码补全',
-+				titleEn: 'Intelligent Code Completion',
-+				textZh: '通过先进的 AI 模型，Claude Code 能够理解您的代码上下文，提供精准的代码建议',
-+				textEn: 'Using advanced AI models, Claude Code understands your code context and provides precise code suggestions',
-+			},
-+			{
-+				imageUrl:
-+					'https://images.unsplash.com/photo-1552308995-2baac1ad5490?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80',
-+				titleZh: '实时协作',
-+				titleEn: 'Real-time Collaboration',
-+				textZh: '与团队成员无缝协作，共享代码、注释和想法，提高开发效率',
-+				textEn: 'Seamlessly collaborate with team members, share code, comments and ideas to improve development efficiency',
-+			},
-+			{
-+				imageUrl:
-+					'https://images.unsplash.com/photo-1542831371-29b0f74f9713?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80',
-+				titleZh: '代码分析与优化',
-+				titleEn: 'Code Analysis & Optimization',
-+				textZh: '自动检测潜在问题并提供改进建议，让您的代码更高效、更安全',
-+				textEn: 'Automatically detect potential issues and provide improvement suggestions to make your code more efficient and secure',
-+			},
-+			{
-+				imageUrl:
-+					'https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=250&q=80',
-+				titleZh: '多语言支持',
-+				titleEn: 'Multi-language Support',
-+				textZh: '支持 Python、JavaScript、Java、C++ 等多种主流编程语言，满足不同开发需求',
-+				textEn: 'Supports Python, JavaScript, Java, C++ and other mainstream programming languages to meet various development needs',
-+			},
-+		];
++		// Use API data if available, otherwise use default slides
++		const slides = this.slidesData.length > 0
++			? this.slidesData.map(banner => ({
++				imageUrl: banner.image,
++				titleZh: banner.title_zh,
++				titleEn: banner.title_en,
++				textZh: banner.description_zh,
++				textEn: banner.description_en,
++				linkUrl: banner.link_url,
++			}))
++			: this.defaultSlides;
 +
 +		slides.forEach((slideData, index) => {
 +			const slide = document.createElement('div');
@@ -515,13 +564,25 @@ index 00000000000..64ce93491ca
 +
 +			const title = document.createElement('h2');
 +			title.className = 'slide-title';
-+			title.textContent = slideData.titleZh;
++			title.textContent = this.currentLanguage === 'zh' ? slideData.titleZh : slideData.titleEn;
 +			slide.appendChild(title);
 +
 +			const text = document.createElement('p');
 +			text.className = 'slide-text';
-+			text.textContent = slideData.textZh;
++			text.textContent = this.currentLanguage === 'zh' ? slideData.textZh : slideData.textEn;
 +			slide.appendChild(text);
++
++			// Add click handler if linkUrl exists
++			if (slideData.linkUrl) {
++				slide.style.cursor = 'pointer';
++				this._register(
++					addDisposableListener(slide, EventType.CLICK, () => {
++						if (slideData.linkUrl) {
++							this.openerService.open(URI.parse(slideData.linkUrl), { openExternal: true });
++						}
++					})
++				);
++			}
 +
 +			carouselContainer.appendChild(slide);
 +		});
@@ -531,7 +592,7 @@ index 00000000000..64ce93491ca
 +		// Carousel dots
 +		const carouselDots = document.createElement('div');
 +		carouselDots.className = 'carousel-dots';
-+		for (let i = 0; i < 4; i++) {
++		for (let i = 0; i < slides.length; i++) {
 +			const dot = document.createElement('button');
 +			dot.className = i === 0 ? 'carousel-dot active' : 'carousel-dot';
 +			dot.setAttribute('data-slide', String(i));
