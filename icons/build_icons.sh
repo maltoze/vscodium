@@ -55,16 +55,26 @@ build_darwin_main() { # {{{
       rsvg-convert -w 1024 -h 1024 "icons/${QUALITY}/codium_cnl.svg" -o "code_1024.png"
     else
       rsvg-convert -w 655 -h 655 "icons/${QUALITY}/codium_cnl.svg" -o "code_logo.png"
-      composite "code_logo.png" -gravity center "${VSCODE_PREFIX}icons/template_macos.png" "code_1024.png"
+      magick "${VSCODE_PREFIX}icons/template_macos.png" "code_logo.png" -gravity center -composite "code_1024.png"
     fi
 
-    convert "code_1024.png" -resize 512x512 code_512.png
-    convert "code_1024.png" -resize 256x256 code_256.png
-    convert "code_1024.png" -resize 128x128 code_128.png
+    # Create iconset directory with all required sizes
+    mkdir -p code.iconset
+    magick "code_1024.png" -resize 1024x1024 "code.iconset/icon_512x512@2x.png"
+    magick "code_1024.png" -resize 512x512 "code.iconset/icon_512x512.png"
+    magick "code_1024.png" -resize 512x512 "code.iconset/icon_256x256@2x.png"
+    magick "code_1024.png" -resize 256x256 "code.iconset/icon_256x256.png"
+    magick "code_1024.png" -resize 256x256 "code.iconset/icon_128x128@2x.png"
+    magick "code_1024.png" -resize 128x128 "code.iconset/icon_128x128.png"
+    magick "code_1024.png" -resize 64x64 "code.iconset/icon_32x32@2x.png"
+    magick "code_1024.png" -resize 32x32 "code.iconset/icon_32x32.png"
+    magick "code_1024.png" -resize 32x32 "code.iconset/icon_16x16@2x.png"
+    magick "code_1024.png" -resize 16x16 "code.iconset/icon_16x16.png"
 
-    png2icns "${SRC_PREFIX}src/${QUALITY}/resources/darwin/code.icns" code_512.png code_256.png code_128.png
+    # Generate ICNS using iconutil
+    iconutil -c icns code.iconset -o "${SRC_PREFIX}src/${QUALITY}/resources/darwin/code.icns"
 
-    rm -f code_1024.png code_512.png code_256.png code_128.png code_logo.png
+    rm -rf code.iconset code_1024.png code_logo.png
   fi
 } # }}}
 
@@ -82,14 +92,26 @@ build_darwin_types() { # {{{
       if [[ "${name}" != 'code' ]] && [[ ! -f "${SRC_PREFIX}src/${QUALITY}/resources/darwin/${name}.icns" ]]; then
         icns2png -x -s 512x512 "${file}" -o .
 
-        composite -blend 100% -geometry +323+365 "${VSCODE_PREFIX}icons/corner_512.png" "${name}_512x512x32.png" "${name}.png"
-        composite -geometry +359+374 "code_logo.png" "${name}.png" "${name}.png"
+        magick "${name}_512x512x32.png" "${VSCODE_PREFIX}icons/corner_512.png" -geometry +323+365 -compose blend -define compose:args=100 -composite "${name}.png"
+        magick "${name}.png" "code_logo.png" -geometry +359+374 -composite "${name}.png"
 
-        convert "${name}.png" -resize 256x256 "${name}_256.png"
+        # Create iconset directory with all required sizes
+        mkdir -p "${name}.iconset"
+        magick "${name}.png" -resize 1024x1024 "${name}.iconset/icon_512x512@2x.png"
+        magick "${name}.png" -resize 512x512 "${name}.iconset/icon_512x512.png"
+        magick "${name}.png" -resize 512x512 "${name}.iconset/icon_256x256@2x.png"
+        magick "${name}.png" -resize 256x256 "${name}.iconset/icon_256x256.png"
+        magick "${name}.png" -resize 256x256 "${name}.iconset/icon_128x128@2x.png"
+        magick "${name}.png" -resize 128x128 "${name}.iconset/icon_128x128.png"
+        magick "${name}.png" -resize 64x64 "${name}.iconset/icon_32x32@2x.png"
+        magick "${name}.png" -resize 32x32 "${name}.iconset/icon_32x32.png"
+        magick "${name}.png" -resize 32x32 "${name}.iconset/icon_16x16@2x.png"
+        magick "${name}.png" -resize 16x16 "${name}.iconset/icon_16x16.png"
 
-        png2icns "${SRC_PREFIX}src/${QUALITY}/resources/darwin/${name}.icns" "${name}.png" "${name}_256.png"
+        # Generate ICNS using iconutil
+        iconutil -c icns "${name}.iconset" -o "${SRC_PREFIX}src/${QUALITY}/resources/darwin/${name}.icns"
 
-        rm "${name}_512x512x32.png" "${name}.png" "${name}_256.png"
+        rm -rf "${name}.iconset" "${name}_512x512x32.png" "${name}.png"
       fi
     fi
   done
@@ -101,13 +123,13 @@ build_linux_main() { # {{{
   if [[ ! -f "${SRC_PREFIX}src/${QUALITY}/resources/linux/code.png" ]]; then
     mkdir -p "${SRC_PREFIX}src/${QUALITY}/resources/linux"
 
-    load_linux_png "${SRC_PREFIX}src/${QUALITY}/resources/linux/code.png"
+    # load_linux_png "${SRC_PREFIX}src/${QUALITY}/resources/linux/code.png"
   fi
 
   if [[ ! -f "${SRC_PREFIX}src/${QUALITY}/resources/linux/rpm/code.xpm" ]]; then
     mkdir -p "${SRC_PREFIX}src/${QUALITY}/resources/linux/rpm"
 
-    convert "${SRC_PREFIX}src/${QUALITY}/resources/linux/code.png" "${SRC_PREFIX}src/${QUALITY}/resources/linux/rpm/code.xpm"
+    magick "${SRC_PREFIX}src/${QUALITY}/resources/linux/code.png" "${SRC_PREFIX}src/${QUALITY}/resources/linux/rpm/code.xpm"
   fi
 } # }}}
 
@@ -128,11 +150,11 @@ build_server() { # {{{
   fi
 
   if [[ ! -f "${SRC_PREFIX}src/${QUALITY}/resources/server/code-192.png" ]]; then
-    convert -size "192x192" "${SRC_PREFIX}src/${QUALITY}/resources/linux/code.png" "${SRC_PREFIX}src/${QUALITY}/resources/server/code-192.png"
+    magick "${SRC_PREFIX}src/${QUALITY}/resources/linux/code.png" -resize "192x192" "${SRC_PREFIX}src/${QUALITY}/resources/server/code-192.png"
   fi
 
   if [[ ! -f "${SRC_PREFIX}src/${QUALITY}/resources/server/code-512.png" ]]; then
-    convert -size "512x512" "${SRC_PREFIX}src/${QUALITY}/resources/linux/code.png" "${SRC_PREFIX}src/${QUALITY}/resources/server/code-512.png"
+    magick "${SRC_PREFIX}src/${QUALITY}/resources/linux/code.png" -resize "512x512" "${SRC_PREFIX}src/${QUALITY}/resources/server/code-512.png"
   fi
 } # }}}
 
@@ -140,7 +162,7 @@ build_windows_main() { # {{{
   if [[ ! -f "${SRC_PREFIX}src/${QUALITY}/resources/win32/code.ico" ]]; then
     mkdir -p "${SRC_PREFIX}src/${QUALITY}/resources/win32"
 
-    load_windows_ico "${SRC_PREFIX}src/${QUALITY}/resources/win32/code.ico"
+    # load_windows_ico "${SRC_PREFIX}src/${QUALITY}/resources/win32/code.ico"
   fi
 } # }}}
 
@@ -155,17 +177,17 @@ build_windows_type() { # {{{
 
   if [[ ! -f "${FILE_PATH}" ]]; then
     if [[ "${FILE_PATH##*.}" == "png" ]]; then
-      convert -size "${IMG_SIZE}" "${IMG_BG_COLOR}" PNG32:"${FILE_PATH}"
+      magick -size "${IMG_SIZE}" "${IMG_BG_COLOR}" PNG32:"${FILE_PATH}"
     else
-      convert -size "${IMG_SIZE}" "${IMG_BG_COLOR}" "${FILE_PATH}"
+      magick -size "${IMG_SIZE}" "${IMG_BG_COLOR}" "${FILE_PATH}"
     fi
 
     rsvg-convert -w "${LOGO_SIZE}" -h "${LOGO_SIZE}" "icons/${QUALITY}/codium_cnl.svg" -o "code_logo.png"
 
     if [[ "${GRAVITY}" == "center" ]]; then
-      composite -gravity "${GRAVITY}" "code_logo.png" "${FILE_PATH}" "${FILE_PATH}"
+      magick "${FILE_PATH}" "code_logo.png" -gravity "${GRAVITY}" -composite "${FILE_PATH}"
     else
-      composite -gravity NorthWest -geometry "${GRAVITY}" "code_logo.png" "${FILE_PATH}" "${FILE_PATH}"
+      magick "${FILE_PATH}" "code_logo.png" -gravity NorthWest -geometry "${GRAVITY}" -composite "${FILE_PATH}"
     fi
   fi
 } # }}}
@@ -180,13 +202,18 @@ build_windows_types() { # {{{
       name=$(basename "${file}" '.ico')
 
       if [[ "${name}" != 'code' ]] && [[ ! -f "${SRC_PREFIX}src/${QUALITY}/resources/win32/${name}.ico" ]]; then
-        icotool -x -w 256 "${file}"
+        icotool -x -w 256 "${file}" 2>/dev/null || true
 
-        composite -geometry +150+185 "code_logo.png" "${name}_1_256x256x32.png" "${name}.png"
+        # Find the extracted 256x256 PNG (index may vary)
+        extracted_png=$(ls "${name}"_*_256x256x32.png 2>/dev/null | head -1)
 
-        convert "${name}.png" -define icon:auto-resize=256,128,96,64,48,32,24,20,16 "${SRC_PREFIX}src/${QUALITY}/resources/win32/${name}.ico"
+        if [[ -n "${extracted_png}" ]]; then
+          magick "${extracted_png}" "code_logo.png" -geometry +150+185 -composite "${name}.png"
 
-        rm "${name}_1_256x256x32.png" "${name}.png"
+          magick "${name}.png" -define icon:auto-resize=256,128,96,64,48,32,24,20,16 "${SRC_PREFIX}src/${QUALITY}/resources/win32/${name}.ico"
+
+          rm "${extracted_png}" "${name}.png"
+        fi
       fi
     fi
   done
@@ -215,7 +242,7 @@ build_windows_types() { # {{{
 
 if [[ "${0}" == "${BASH_SOURCE[0]}" ]]; then
   build_darwin_main
-  build_linux_main
+  # build_linux_main
   build_windows_main
 
   build_darwin_types
