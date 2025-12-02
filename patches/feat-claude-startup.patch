@@ -374,10 +374,10 @@ index 00000000000..015be910aaa
 +);
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..f1a81a65182
+index 00000000000..e96753aef02
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
-@@ -0,0 +1,415 @@
+@@ -0,0 +1,443 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -394,6 +394,8 @@ index 00000000000..f1a81a65182
 +import * as DOM from '../../../../base/browser/dom.js';
 +import { DeployAISettingsInput } from './deployaiSettingsInput.js';
 +import { asCssVariable, editorBackground, editorForeground, inputBackground, inputBorder, inputForeground, focusBorder, buttonBackground, buttonForeground, buttonHoverBackground, contrastBorder, widgetShadow, listHoverBackground, listActiveSelectionBackground } from '../../../../platform/theme/common/colorRegistry.js';
++import { ILocaleService } from '../../../services/localization/common/locale.js';
++import { Language } from '../../../../base/common/platform.js';
 +
 +export class DeployAISettingsEditor extends EditorPane {
 +	static readonly ID = 'workbench.editor.deployaiSettings';
@@ -414,8 +416,16 @@ index 00000000000..f1a81a65182
 +		@ITelemetryService telemetryService: ITelemetryService,
 +		@IThemeService themeService: IThemeService,
 +		@IStorageService storageService: IStorageService,
++		@ILocaleService private readonly localeService: ILocaleService,
 +	) {
 +		super(DeployAISettingsEditor.ID, group, telemetryService, themeService, storageService);
++		this.initializeLanguage();
++	}
++
++	private initializeLanguage(): void {
++		// Get current language from VSCode
++		const currentLocale = Language.value() || 'en';
++		this.currentLanguage = currentLocale.startsWith('zh') ? 'zh' : 'en';
 +	}
 +
 +	protected createEditor(parent: HTMLElement): void {
@@ -493,12 +503,18 @@ index 00000000000..f1a81a65182
 +		const btnEn = DOM.append(langToggle, DOM.$('button.lang-btn'));
 +		btnEn.textContent = 'English';
 +		btnEn.dataset.lang = 'en';
-+		btnEn.style.cssText = `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: transparent; cursor: pointer; color: ${asCssVariable(editorForeground)}; opacity: 0.7;`;
++		const isEnActive = this.currentLanguage === 'en';
++		btnEn.style.cssText = isEnActive
++			? `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: ${asCssVariable(listActiveSelectionBackground)}; cursor: pointer; color: ${asCssVariable(editorForeground)};`
++			: `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: transparent; cursor: pointer; color: ${asCssVariable(editorForeground)}; opacity: 0.7;`;
 +
 +		const btnZh = DOM.append(langToggle, DOM.$('button.lang-btn'));
 +		btnZh.textContent = '中文';
 +		btnZh.dataset.lang = 'zh';
-+		btnZh.style.cssText = `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: ${asCssVariable(listActiveSelectionBackground)}; cursor: pointer; color: ${asCssVariable(editorForeground)};`;
++		const isZhActive = this.currentLanguage === 'zh';
++		btnZh.style.cssText = isZhActive
++			? `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: ${asCssVariable(listActiveSelectionBackground)}; cursor: pointer; color: ${asCssVariable(editorForeground)};`
++			: `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: transparent; cursor: pointer; color: ${asCssVariable(editorForeground)}; opacity: 0.7;`;
 +
 +		this._register(DOM.addDisposableListener(btnEn, DOM.EventType.CLICK, () => this.setLanguage('en')));
 +		this._register(DOM.addDisposableListener(btnZh, DOM.EventType.CLICK, () => this.setLanguage('zh')));
@@ -727,18 +743,30 @@ index 00000000000..f1a81a65182
 +		text.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.5;`;
 +	}
 +
-+	private setLanguage(lang: string): void {
-+		this.currentLanguage = lang;
-+		const buttons = this.container?.querySelectorAll('.lang-btn');
-+		buttons?.forEach(btn => {
-+			const btnEl = btn as HTMLElement;
-+			if (btnEl.dataset.lang === lang) {
-+				btnEl.style.cssText = `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: ${asCssVariable(listActiveSelectionBackground)}; cursor: pointer; color: ${asCssVariable(editorForeground)};`;
-+			} else {
-+				btnEl.style.cssText = `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: transparent; cursor: pointer; color: ${asCssVariable(editorForeground)}; opacity: 0.7;`;
-+			}
-+		});
-+		this.renderDropdownContent();
++	private async setLanguage(lang: string): Promise<void> {
++		// Use VSCode's locale service to switch language
++		await this.toggleLanguage(lang);
++	}
++
++	private async toggleLanguage(targetLang: string): Promise<void> {
++		try {
++			// Determine target locale
++			const targetLocale = targetLang === 'zh' ? 'zh-cn' : 'en';
++
++			// Switch to target language
++			const languagePackItem = {
++				id: targetLocale,
++				label: targetLocale === 'zh-cn' ? '中文' : 'English',
++				galleryExtension: undefined,
++				extensionId: undefined
++			};
++
++			// Use VSCode's locale service to switch language
++			// This will restart the application
++			await this.localeService.setLocale(languagePackItem, false);
++		} catch (error) {
++			console.error('Error toggling language:', error);
++		}
 +	}
 +
 +	private toggleDropdown(): void {
