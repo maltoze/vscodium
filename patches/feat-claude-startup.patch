@@ -99,21 +99,26 @@ index 0246cd2ad10..16174d3a4d8 100644
 +	background-color: rgba(127, 127, 127, 0.3) !important;
 +}
 diff --git a/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts b/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts
-index f8e5e74bf6b..7ae4e57f964 100644
+index f8e5e74bf6b..91bf15751f6 100644
 --- a/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts
 +++ b/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts
-@@ -10,3 +10,3 @@ import { IStorageService, StorageScope, StorageTarget } from '../../../../platfo
+@@ -7,6 +7,6 @@ import { ILocalizedString, localize, localize2 } from '../../../../nls.js';
+ import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+-import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
++import { IInstantiationService, ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
+ import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
  import { LayoutSettings } from '../../../services/layout/browser/layoutService.js';
 -import { Action2, MenuId, registerAction2 } from '../../../../platform/actions/common/actions.js';
 +import { Action2, MenuId, registerAction2, MenuRegistry } from '../../../../platform/actions/common/actions.js';
  import { ContextKeyExpr, ContextKeyExpression, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
-@@ -16,2 +16,5 @@ import { IsMainWindowFullscreenContext, IsCompactTitleBarContext, TitleBarStyleC
+@@ -16,2 +16,6 @@ import { IsMainWindowFullscreenContext, IsCompactTitleBarContext, TitleBarStyleC
  import { CustomTitleBarVisibility, TitleBarSetting, TitlebarStyle } from '../../../../platform/window/common/window.js';
 +import { IOpenerService } from '../../../../platform/opener/common/opener.js';
 +import { URI } from '../../../../base/common/uri.js';
 +import { INSTANCE_ID, TOKEN_STORAGE_KEY, CALLBACK_SCHEME, CALLBACK_AUTHORITY, CALLBACK_PATH } from '../../../common/deployai365.js';
++import { IEditorService } from '../../../services/editor/common/editorService.js';
  
-@@ -278 +281,153 @@ export const GLOBAL_ACTIVITY_TITLE_ACTION: IAction = {
+@@ -278 +282,177 @@ export const GLOBAL_ACTIVITY_TITLE_ACTION: IAction = {
  };
 +
 +// Account Menu
@@ -185,6 +190,30 @@ index f8e5e74bf6b..7ae4e57f964 100644
 +	}
 +});
 +
++// Settings Menu Item
++registerAction2(class SettingsAction extends Action2 {
++	constructor() {
++		super({
++			id: 'workbench.action.deployaiSettings',
++			title: localize2('settings', 'Settings'),
++			menu: {
++				id: AccountMenuId,
++				group: 'account',
++				order: 2
++			}
++		});
++	}
++
++	async run(accessor: ServicesAccessor): Promise<void> {
++		const editorService = accessor.get(IEditorService);
++		const instantiationService = accessor.get(IInstantiationService);
++
++		const { DeployAISettingsInput } = await import('../../../contrib/deployaiSettings/browser/deployaiSettingsInput.js');
++		const input = instantiationService.createInstance(DeployAISettingsInput);
++		await editorService.openEditor(input);
++	}
++});
++
 +// Logout Menu Item
 +registerAction2(class LogoutAction extends Action2 {
 +	constructor() {
@@ -194,7 +223,7 @@ index f8e5e74bf6b..7ae4e57f964 100644
 +			menu: {
 +				id: AccountMenuId,
 +				group: 'account',
-+				order: 2
++				order: 3
 +			}
 +		});
 +	}
@@ -291,6 +320,514 @@ index 00000000000..0540eddeeb3
 +export const CALLBACK_PATH = '/callback';
 +export const USER_INFO_API = `https://launch-api.deployai365.com/api/work-user/${INSTANCE_ID}`;
 +export const API_ENDPOINT = 'https://modelproxy-api.deployai365.com/api/key/get_or_create_sub_key';
+diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts
+new file mode 100644
+index 00000000000..015be910aaa
+--- /dev/null
++++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts
+@@ -0,0 +1,46 @@
++/*---------------------------------------------------------------------------------------------
++ *  Copyright (c) Microsoft Corporation. All rights reserved.
++ *  Licensed under the MIT License. See License.txt in the project root for license information.
++ *--------------------------------------------------------------------------------------------*/
++
++import { localize } from '../../../../nls.js';
++import { Registry } from '../../../../platform/registry/common/platform.js';
++import { EditorExtensions, IEditorFactoryRegistry } from '../../../common/editor.js';
++import { EditorPaneDescriptor, IEditorPaneRegistry } from '../../../browser/editor.js';
++import { SyncDescriptor } from '../../../../platform/instantiation/common/descriptors.js';
++import { DeployAISettingsEditor } from './deployaiSettingsEditor.js';
++import { DeployAISettingsInput } from './deployaiSettingsInput.js';
++import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
++import { IEditorSerializer } from '../../../common/editor.js';
++
++// Register Editor Pane
++Registry.as<IEditorPaneRegistry>(EditorExtensions.EditorPane).registerEditorPane(
++	EditorPaneDescriptor.create(
++		DeployAISettingsEditor,
++		DeployAISettingsEditor.ID,
++		localize('deployaiSettings', 'DeployAI Settings')
++	),
++	[
++		new SyncDescriptor(DeployAISettingsInput)
++	]
++);
++
++// Register Editor Serializer
++class DeployAISettingsInputSerializer implements IEditorSerializer {
++	canSerialize(): boolean {
++		return true;
++	}
++
++	serialize(): string {
++		return '';
++	}
++
++	deserialize(instantiationService: IInstantiationService): DeployAISettingsInput {
++		return instantiationService.createInstance(DeployAISettingsInput);
++	}
++}
++
++Registry.as<IEditorFactoryRegistry>(EditorExtensions.EditorFactory).registerEditorSerializer(
++	DeployAISettingsInput.ID,
++	DeployAISettingsInputSerializer
++);
+diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
+new file mode 100644
+index 00000000000..f1a81a65182
+--- /dev/null
++++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
+@@ -0,0 +1,415 @@
++/*---------------------------------------------------------------------------------------------
++ *  Copyright (c) Microsoft Corporation. All rights reserved.
++ *  Licensed under the MIT License. See License.txt in the project root for license information.
++ *--------------------------------------------------------------------------------------------*/
++
++import { localize } from '../../../../nls.js';
++import { EditorPane } from '../../../browser/parts/editor/editorPane.js';
++import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
++import { IThemeService } from '../../../../platform/theme/common/themeService.js';
++import { IStorageService } from '../../../../platform/storage/common/storage.js';
++import { IEditorOpenContext } from '../../../common/editor.js';
++import { CancellationToken } from '../../../../base/common/cancellation.js';
++import { IEditorGroup } from '../../../services/editor/common/editorGroupsService.js';
++import * as DOM from '../../../../base/browser/dom.js';
++import { DeployAISettingsInput } from './deployaiSettingsInput.js';
++import { asCssVariable, editorBackground, editorForeground, inputBackground, inputBorder, inputForeground, focusBorder, buttonBackground, buttonForeground, buttonHoverBackground, contrastBorder, widgetShadow, listHoverBackground, listActiveSelectionBackground } from '../../../../platform/theme/common/colorRegistry.js';
++
++export class DeployAISettingsEditor extends EditorPane {
++	static readonly ID = 'workbench.editor.deployaiSettings';
++
++	private container: HTMLElement | undefined;
++	private currentLanguage: string = 'zh';
++	private selectedModel: string = 'claude-3-5-sonnet';
++	private isDropdownOpen: boolean = false;
++	private isCustomOpen: boolean = false;
++
++	private dropdownButton: HTMLElement | undefined;
++	private dropdownMenu: HTMLElement | undefined;
++	private customContent: HTMLElement | undefined;
++	private customChevron: HTMLElement | undefined;
++
++	constructor(
++		group: IEditorGroup,
++		@ITelemetryService telemetryService: ITelemetryService,
++		@IThemeService themeService: IThemeService,
++		@IStorageService storageService: IStorageService,
++	) {
++		super(DeployAISettingsEditor.ID, group, telemetryService, themeService, storageService);
++	}
++
++	protected createEditor(parent: HTMLElement): void {
++		this.container = parent;
++		this.render();
++		this.updateStyles();
++	}
++
++	override async setInput(input: DeployAISettingsInput, options: any, context: IEditorOpenContext, token: CancellationToken): Promise<void> {
++		await super.setInput(input, options, context, token);
++	}
++
++	override updateStyles(): void {
++		super.updateStyles();
++		if (this.container) {
++			this.container.style.background = asCssVariable(editorBackground);
++			this.container.style.color = asCssVariable(editorForeground);
++		}
++	}
++
++	private render(): void {
++		if (!this.container) {
++			return;
++		}
++
++		this.container.style.cssText = `background: ${asCssVariable(editorBackground)}; color: ${asCssVariable(editorForeground)}; overflow-y: auto; height: 100%;`;
++
++		const contentWrapper = DOM.append(this.container, DOM.$('.deployai-settings-wrapper'));
++		contentWrapper.style.cssText = 'max-width: 768px; margin: 0 auto; padding: 40px 32px 80px;';
++
++		this.renderHeader(contentWrapper);
++		this.renderGeneralSection(contentWrapper);
++		this.renderModelSection(contentWrapper);
++		this.renderCustomSection(contentWrapper);
++		this.renderFooter(contentWrapper);
++	}
++
++	private renderHeader(parent: HTMLElement): void {
++		const header = DOM.append(parent, DOM.$('.settings-header'));
++		header.style.cssText = `display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid ${asCssVariable(contrastBorder)}; padding-bottom: 24px; margin-bottom: 40px;`;
++
++		const headerContent = DOM.append(header, DOM.$('.header-content'));
++		const title = DOM.append(headerContent, DOM.$('h1'));
++		title.textContent = localize('deployai.settings.title', 'Settings');
++		title.style.cssText = `font-size: 24px; font-weight: 700; color: ${asCssVariable(editorForeground)}; margin: 0;`;
++
++		const desc = DOM.append(headerContent, DOM.$('p'));
++		desc.textContent = localize('deployai.settings.desc', 'Manage workspace configurations and AI model preferences.');
++		desc.style.cssText = `font-size: 14px; color: ${asCssVariable(editorForeground)}; opacity: 0.7; margin: 4px 0 0;`;
++	}
++
++	private renderGeneralSection(parent: HTMLElement): void {
++		const section = DOM.append(parent, DOM.$('.settings-section'));
++		section.style.cssText = 'margin-bottom: 40px;';
++
++		const sectionTitle = DOM.append(section, DOM.$('h3'));
++		sectionTitle.textContent = localize('deployai.settings.general', 'GENERAL');
++		sectionTitle.style.cssText = `font-size: 11px; font-weight: 700; color: ${asCssVariable(editorForeground)}; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;`;
++
++		const card = DOM.append(section, DOM.$('.settings-card'));
++		card.style.cssText = `background: ${asCssVariable(inputBackground)}; border-radius: 6px; border: 1px solid ${asCssVariable(inputBorder)}; padding: 20px; display: flex; align-items: center; justify-content: space-between;`;
++
++		const labelContainer = DOM.append(card, DOM.$('.label-container'));
++		const label = DOM.append(labelContainer, DOM.$('label'));
++		label.textContent = localize('deployai.settings.language', 'Language');
++		label.style.cssText = `font-size: 14px; font-weight: 500; color: ${asCssVariable(editorForeground)}; display: block;`;
++
++		const labelDesc = DOM.append(labelContainer, DOM.$('p'));
++		labelDesc.textContent = localize('deployai.settings.languageDesc', 'Select interface language');
++		labelDesc.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.7; margin: 2px 0 0;`;
++
++		const langToggle = DOM.append(card, DOM.$('.lang-toggle'));
++		langToggle.style.cssText = `background: ${asCssVariable(editorBackground)}; padding: 4px; border-radius: 6px; display: flex; font-size: 12px; font-weight: 500;`;
++
++		const btnEn = DOM.append(langToggle, DOM.$('button.lang-btn'));
++		btnEn.textContent = 'English';
++		btnEn.dataset.lang = 'en';
++		btnEn.style.cssText = `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: transparent; cursor: pointer; color: ${asCssVariable(editorForeground)}; opacity: 0.7;`;
++
++		const btnZh = DOM.append(langToggle, DOM.$('button.lang-btn'));
++		btnZh.textContent = '中文';
++		btnZh.dataset.lang = 'zh';
++		btnZh.style.cssText = `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: ${asCssVariable(listActiveSelectionBackground)}; cursor: pointer; color: ${asCssVariable(editorForeground)};`;
++
++		this._register(DOM.addDisposableListener(btnEn, DOM.EventType.CLICK, () => this.setLanguage('en')));
++		this._register(DOM.addDisposableListener(btnZh, DOM.EventType.CLICK, () => this.setLanguage('zh')));
++	}
++
++	private renderModelSection(parent: HTMLElement): void {
++		const section = DOM.append(parent, DOM.$('.settings-section'));
++		section.style.cssText = 'margin-bottom: 40px; position: relative; z-index: 20;';
++
++		const sectionTitle = DOM.append(section, DOM.$('h3'));
++		sectionTitle.textContent = localize('deployai.settings.model', 'MODEL SELECTION');
++		sectionTitle.style.cssText = `font-size: 11px; font-weight: 700; color: ${asCssVariable(editorForeground)}; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;`;
++
++		const card = DOM.append(section, DOM.$('.settings-card'));
++		card.style.cssText = `background: ${asCssVariable(inputBackground)}; border-radius: 6px; border: 1px solid ${asCssVariable(inputBorder)}; padding: 20px;`;
++
++		const labelContainer = DOM.append(card, DOM.$('.label-container'));
++		labelContainer.style.cssText = 'margin-bottom: 8px;';
++
++		const label = DOM.append(labelContainer, DOM.$('label'));
++		label.textContent = localize('deployai.settings.selectModel', 'Select AI Model');
++		label.style.cssText = `font-size: 14px; font-weight: 500; color: ${asCssVariable(editorForeground)};`;
++
++		const labelDesc = DOM.append(labelContainer, DOM.$('p'));
++		labelDesc.textContent = localize('deployai.settings.modelDesc', 'Choose the reasoning engine for code generation');
++		labelDesc.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.7; margin: 2px 0 0;`;
++
++		const dropdownContainer = DOM.append(card, DOM.$('.dropdown-container'));
++		dropdownContainer.style.cssText = 'position: relative; margin-top: 16px;';
++
++		this.dropdownButton = DOM.append(dropdownContainer, DOM.$('button.dropdown-btn'));
++		this.dropdownButton.style.cssText = `width: 100%; text-align: left; padding: 12px 16px; background: ${asCssVariable(editorBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; color: ${asCssVariable(editorForeground)};`;
++
++		this.dropdownMenu = DOM.append(dropdownContainer, DOM.$('.dropdown-menu'));
++		this.dropdownMenu.style.cssText = `position: absolute; top: calc(100% + 8px); left: 0; width: 100%; background: ${asCssVariable(inputBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; border-radius: 6px; box-shadow: ${asCssVariable(widgetShadow)}; z-index: 50; overflow: hidden; padding: 4px 0; opacity: 0; transform: scale(0.98) translateY(-8px); pointer-events: none; transition: all 0.2s;`;
++
++		this.renderDropdownContent();
++
++		this._register(DOM.addDisposableListener(this.dropdownButton, DOM.EventType.CLICK, (e) => {
++			e.stopPropagation();
++			this.toggleDropdown();
++		}));
++
++		this._register(DOM.addDisposableListener(document, DOM.EventType.CLICK, () => {
++			if (this.isDropdownOpen) {
++				this.toggleDropdown();
++			}
++		}));
++	}
++
++	private renderDropdownContent(): void {
++		if (!this.dropdownButton || !this.dropdownMenu) {
++			return;
++		}
++
++		const models = [
++			{ id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', icon: 'A', desc: this.currentLanguage === 'zh' ? '擅长编程与逻辑推理' : 'Best for coding & reasoning' },
++			{ id: 'gemini-3-pro', name: 'Gemini 3 Pro', icon: 'G', desc: this.currentLanguage === 'zh' ? '强大的多模态处理能力' : 'Multimodal powerhouse' },
++			{ id: 'deepseek-v3', name: 'DeepSeek V3', icon: 'D', desc: this.currentLanguage === 'zh' ? '开源模型性能之王' : 'Open weights champion' }
++		];
++
++		const selected = models.find(m => m.id === this.selectedModel) || models[0];
++
++		// Render button
++		DOM.clearNode(this.dropdownButton);
++		const btnContent = DOM.append(this.dropdownButton, DOM.$('.btn-content'));
++		btnContent.style.cssText = 'display: flex; align-items: center; gap: 12px;';
++
++		const iconBox = DOM.append(btnContent, DOM.$('.icon-box'));
++		iconBox.textContent = selected.icon;
++		iconBox.style.cssText = `width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; background: ${asCssVariable(buttonBackground)}; color: ${asCssVariable(buttonForeground)};`;
++
++		const textBox = DOM.append(btnContent, DOM.$('.text-box'));
++		const modelName = DOM.append(textBox, DOM.$('div'));
++		modelName.textContent = selected.name;
++		modelName.style.cssText = `font-size: 14px; font-weight: 600; color: ${asCssVariable(editorForeground)}; line-height: 1;`;
++
++		const modelDesc = DOM.append(textBox, DOM.$('div'));
++		modelDesc.textContent = selected.desc;
++		modelDesc.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.7; margin-top: 4px; line-height: 1;`;
++
++		const chevron = DOM.append(this.dropdownButton, DOM.$('span.chevron'));
++		chevron.textContent = '▼';
++		chevron.style.cssText = `font-size: 10px; color: ${asCssVariable(editorForeground)}; opacity: 0.5; transition: transform 0.2s;`;
++
++		// Render menu
++		DOM.clearNode(this.dropdownMenu);
++		models.forEach(model => {
++			const option = DOM.append(this.dropdownMenu!, DOM.$('button.dropdown-option'));
++			option.style.cssText = `width: 100%; text-align: left; padding: 12px 16px; background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background 0.2s; color: ${asCssVariable(editorForeground)};`;
++
++			const optContent = DOM.append(option, DOM.$('.opt-content'));
++			optContent.style.cssText = 'display: flex; align-items: center; gap: 12px;';
++
++			const optIcon = DOM.append(optContent, DOM.$('.opt-icon'));
++			optIcon.textContent = model.icon;
++			optIcon.style.cssText = `width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: ${asCssVariable(buttonBackground)}; color: ${asCssVariable(buttonForeground)};`;
++
++			const optName = DOM.append(optContent, DOM.$('span'));
++			optName.textContent = model.name;
++			optName.style.cssText = `font-size: 14px; color: ${asCssVariable(editorForeground)}; font-weight: 500;`;
++
++			if (model.id === this.selectedModel) {
++				const check = DOM.append(option, DOM.$('span'));
++				check.textContent = '✓';
++				check.style.cssText = `color: ${asCssVariable(focusBorder)}; font-size: 16px;`;
++			}
++
++			this._register(DOM.addDisposableListener(option, DOM.EventType.CLICK, () => {
++				this.selectedModel = model.id;
++				this.renderDropdownContent();
++				this.toggleDropdown();
++			}));
++
++			this._register(DOM.addDisposableListener(option, DOM.EventType.MOUSE_ENTER, () => {
++				option.style.background = asCssVariable(listHoverBackground);
++			}));
++
++			this._register(DOM.addDisposableListener(option, DOM.EventType.MOUSE_LEAVE, () => {
++				option.style.background = 'transparent';
++			}));
++		});
++	}
++
++	private renderCustomSection(parent: HTMLElement): void {
++		const section = DOM.append(parent, DOM.$('.settings-section'));
++		section.style.cssText = 'margin-bottom: 40px;';
++
++		const card = DOM.append(section, DOM.$('.settings-card'));
++		card.style.cssText = `background: ${asCssVariable(inputBackground)}; border-radius: 6px; border: 1px solid ${asCssVariable(inputBorder)}; overflow: hidden;`;
++
++		const header = DOM.append(card, DOM.$('button.custom-header'));
++		header.style.cssText = `width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 20px; background: transparent; border: none; cursor: pointer; text-align: left; transition: background 0.2s; color: ${asCssVariable(editorForeground)};`;
++
++		const headerLeft = DOM.append(header, DOM.$('.header-left'));
++		headerLeft.style.cssText = 'display: flex; align-items: center; gap: 16px;';
++
++		const iconBox = DOM.append(headerLeft, DOM.$('.icon-box'));
++		iconBox.textContent = '⚙';
++		iconBox.style.cssText = `width: 40px; height: 40px; background: ${asCssVariable(buttonBackground)}; color: ${asCssVariable(buttonForeground)}; border-radius: 6px; border: 1px solid ${asCssVariable(inputBorder)}; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: transform 0.2s;`;
++
++		const textBox = DOM.append(headerLeft, DOM.$('.text-box'));
++		const title = DOM.append(textBox, DOM.$('div'));
++		title.textContent = localize('deployai.settings.customEndpoint', 'Custom Endpoint');
++		title.style.cssText = `font-size: 14px; font-weight: 600; color: ${asCssVariable(editorForeground)};`;
++
++		const desc = DOM.append(textBox, DOM.$('div'));
++		desc.textContent = localize('deployai.settings.customDesc', 'Configure local LLMs or private API deployments');
++		desc.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.7; margin-top: 2px;`;
++
++		const headerRight = DOM.append(header, DOM.$('.header-right'));
++		headerRight.style.cssText = `display: flex; align-items: center; gap: 8px; color: ${asCssVariable(editorForeground)}; opacity: 0.5;`;
++
++		this.customChevron = DOM.append(headerRight, DOM.$('span.chevron'));
++		this.customChevron.textContent = '▼';
++		this.customChevron.style.cssText = 'font-size: 12px; transition: transform 0.3s;';
++
++		this.customContent = DOM.append(card, DOM.$('.custom-content'));
++		this.customContent.style.cssText = `max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s; background: ${asCssVariable(editorBackground)}; border-top: 1px solid ${asCssVariable(inputBorder)};`;
++
++		const contentInner = DOM.append(this.customContent, DOM.$('.content-inner'));
++		contentInner.style.cssText = 'padding: 24px; display: grid; gap: 20px;';
++
++		const inputsGrid = DOM.append(contentInner, DOM.$('.inputs-grid'));
++		inputsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 20px;';
++
++		this.renderInput(inputsGrid, localize('deployai.settings.modelName', 'Model Name'), 'llama-3-70b-instruct');
++		this.renderInput(inputsGrid, localize('deployai.settings.baseUrl', 'API Base URL'), 'http://localhost:11434/v1');
++
++		this.renderInput(contentInner, localize('deployai.settings.apiKey', 'API Key'), 'sk-...', true);
++
++		const btnContainer = DOM.append(contentInner, DOM.$('.btn-container'));
++		btnContainer.style.cssText = 'padding-top: 8px; display: flex; justify-content: flex-end;';
++
++		const testBtn = DOM.append(btnContainer, DOM.$('button'));
++		testBtn.textContent = localize('deployai.settings.testConnection', 'Test Connection');
++		testBtn.style.cssText = `font-size: 12px; font-weight: 500; color: ${asCssVariable(buttonForeground)}; background: ${asCssVariable(buttonBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s;`;
++
++		this._register(DOM.addDisposableListener(header, DOM.EventType.CLICK, () => this.toggleCustomSection()));
++		this._register(DOM.addDisposableListener(header, DOM.EventType.MOUSE_ENTER, () => {
++			header.style.background = asCssVariable(listHoverBackground);
++			iconBox.style.transform = 'scale(1.05)';
++		}));
++		this._register(DOM.addDisposableListener(header, DOM.EventType.MOUSE_LEAVE, () => {
++			header.style.background = 'transparent';
++			iconBox.style.transform = 'scale(1)';
++		}));
++		this._register(DOM.addDisposableListener(testBtn, DOM.EventType.MOUSE_ENTER, () => {
++			testBtn.style.background = asCssVariable(buttonHoverBackground);
++		}));
++		this._register(DOM.addDisposableListener(testBtn, DOM.EventType.MOUSE_LEAVE, () => {
++			testBtn.style.background = asCssVariable(buttonBackground);
++		}));
++	}
++
++	private renderInput(parent: HTMLElement, label: string, placeholder: string, isPassword: boolean = false): void {
++		const container = DOM.append(parent, DOM.$('.input-container'));
++		container.style.cssText = 'display: flex; flex-direction: column; gap: 6px;';
++
++		const labelEl = DOM.append(container, DOM.$('label'));
++		labelEl.textContent = label;
++		labelEl.style.cssText = `font-size: 11px; font-weight: 600; color: ${asCssVariable(editorForeground)}; opacity: 0.7; text-transform: uppercase;`;
++
++		const input = DOM.append(container, DOM.$(isPassword ? 'input[type=password]' : 'input[type=text]')) as HTMLInputElement;
++		input.placeholder = placeholder;
++		input.style.cssText = `width: 100%; padding: 10px 12px; background: ${asCssVariable(inputBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; border-radius: 6px; font-size: 14px; transition: all 0.2s; font-family: monospace; color: ${asCssVariable(inputForeground)};`;
++
++		this._register(DOM.addDisposableListener(input, DOM.EventType.FOCUS, () => {
++			input.style.outline = 'none';
++			input.style.borderColor = asCssVariable(focusBorder);
++			input.style.boxShadow = `0 0 0 1px ${asCssVariable(focusBorder)}`;
++		}));
++
++		this._register(DOM.addDisposableListener(input, DOM.EventType.BLUR, () => {
++			input.style.borderColor = asCssVariable(inputBorder);
++			input.style.boxShadow = 'none';
++		}));
++	}
++
++	private renderFooter(parent: HTMLElement): void {
++		const footer = DOM.append(parent, DOM.$('.settings-footer'));
++		footer.style.cssText = `text-align: center; padding-top: 32px; border-top: 1px solid ${asCssVariable(contrastBorder)};`;
++
++		const text = DOM.append(footer, DOM.$('p'));
++		text.textContent = 'DeployAI Studio v2.4.0 • Build 20240315';
++		text.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.5;`;
++	}
++
++	private setLanguage(lang: string): void {
++		this.currentLanguage = lang;
++		const buttons = this.container?.querySelectorAll('.lang-btn');
++		buttons?.forEach(btn => {
++			const btnEl = btn as HTMLElement;
++			if (btnEl.dataset.lang === lang) {
++				btnEl.style.cssText = `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: ${asCssVariable(listActiveSelectionBackground)}; cursor: pointer; color: ${asCssVariable(editorForeground)};`;
++			} else {
++				btnEl.style.cssText = `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: transparent; cursor: pointer; color: ${asCssVariable(editorForeground)}; opacity: 0.7;`;
++			}
++		});
++		this.renderDropdownContent();
++	}
++
++	private toggleDropdown(): void {
++		this.isDropdownOpen = !this.isDropdownOpen;
++		if (!this.dropdownMenu || !this.dropdownButton) {
++			return;
++		}
++
++		const chevron = this.dropdownButton.querySelector('.chevron') as HTMLElement;
++
++		if (this.isDropdownOpen) {
++			this.dropdownMenu.style.opacity = '1';
++			this.dropdownMenu.style.transform = 'scale(1) translateY(0)';
++			this.dropdownMenu.style.pointerEvents = 'auto';
++			this.dropdownButton.style.borderColor = asCssVariable(focusBorder);
++			if (chevron) {
++				chevron.style.transform = 'rotate(180deg)';
++			}
++		} else {
++			this.dropdownMenu.style.opacity = '0';
++			this.dropdownMenu.style.transform = 'scale(0.98) translateY(-8px)';
++			this.dropdownMenu.style.pointerEvents = 'none';
++			this.dropdownButton.style.borderColor = asCssVariable(inputBorder);
++			if (chevron) {
++				chevron.style.transform = 'rotate(0deg)';
++			}
++		}
++	}
++
++	private toggleCustomSection(): void {
++		this.isCustomOpen = !this.isCustomOpen;
++		if (!this.customContent || !this.customChevron) {
++			return;
++		}
++
++		if (this.isCustomOpen) {
++			this.customContent.style.maxHeight = '600px';
++			this.customContent.style.opacity = '1';
++			this.customChevron.style.transform = 'rotate(180deg)';
++		} else {
++			this.customContent.style.maxHeight = '0';
++			this.customContent.style.opacity = '0';
++			this.customChevron.style.transform = 'rotate(0deg)';
++		}
++	}
++
++	override layout(dimension: DOM.Dimension): void {
++		// Layout is handled by CSS
++	}
++
++	override focus(): void {
++		this.container?.focus();
++	}
++}
+diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsInput.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsInput.ts
+new file mode 100644
+index 00000000000..8753f4694fa
+--- /dev/null
++++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsInput.ts
+@@ -0,0 +1,29 @@
++/*---------------------------------------------------------------------------------------------
++ *  Copyright (c) Microsoft Corporation. All rights reserved.
++ *  Licensed under the MIT License. See License.txt in the project root for license information.
++ *--------------------------------------------------------------------------------------------*/
++
++import { localize } from '../../../../nls.js';
++import { EditorInput } from '../../../common/editor/editorInput.js';
++import { URI } from '../../../../base/common/uri.js';
++import { Schemas } from '../../../../base/common/network.js';
++
++export class DeployAISettingsInput extends EditorInput {
++	static readonly ID = 'workbench.input.deployaiSettings';
++
++	override get typeId(): string {
++		return DeployAISettingsInput.ID;
++	}
++
++	override get resource(): URI {
++		return URI.from({ scheme: Schemas.vscodeSettings, path: 'deployai-settings' });
++	}
++
++	override getName(): string {
++		return localize('deployaiSettings', 'DeployAI Settings');
++	}
++
++	override matches(other: EditorInput | unknown): boolean {
++		return other instanceof DeployAISettingsInput;
++	}
++}
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.contribution.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.contribution.ts
 new file mode 100644
 index 00000000000..5d848074744
@@ -1631,3 +2168,13 @@ index 61d63db7b73..6d6ef004bb7 100644
 +import './contrib/startupSplash/browser/startupSplash.contribution.js';
 +
  
+diff --git a/src/vs/workbench/workbench.desktop.main.ts b/src/vs/workbench/workbench.desktop.main.ts
+index c1d9dc494ce..18ae6a2d9db 100644
+--- a/src/vs/workbench/workbench.desktop.main.ts
++++ b/src/vs/workbench/workbench.desktop.main.ts
+@@ -184,2 +184,5 @@ import './contrib/mcp/electron-browser/mcp.contribution.js';
+ 
++// DeployAI Settings
++import './contrib/deployaiSettings/browser/deployaiSettings.contribution.js';
++
+ //#endregion
