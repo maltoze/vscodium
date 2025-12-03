@@ -1,18 +1,20 @@
 diff --git a/src/vs/platform/native/common/native.ts b/src/vs/platform/native/common/native.ts
-index 43729958372..b0154bd9244 100644
+index 43729958372..745a9047341 100644
 --- a/src/vs/platform/native/common/native.ts
 +++ b/src/vs/platform/native/common/native.ts
-@@ -231,2 +231,5 @@ export interface ICommonNativeHostService {
+@@ -231,2 +231,7 @@ export interface ICommonNativeHostService {
  	windowsGetStringRegKey(hive: 'HKEY_CURRENT_USER' | 'HKEY_LOCAL_MACHINE' | 'HKEY_CLASSES_ROOT' | 'HKEY_USERS' | 'HKEY_CURRENT_CONFIG', path: string, name: string): Promise<string | undefined>;
 +
 +	// Claude Code Router CLI
 +	restartClaudeCodeRouterCli(): Promise<void>;
++	readClaudeCodeRouterConfig(): Promise<string | undefined>;
++	writeClaudeCodeRouterConfig(configJson: string): Promise<void>;
  }
 diff --git a/src/vs/platform/native/electron-main/nativeHostMainService.ts b/src/vs/platform/native/electron-main/nativeHostMainService.ts
-index 8cb60a057b8..8b7c0172001 100644
+index 8cb60a057b8..76f4b315826 100644
 --- a/src/vs/platform/native/electron-main/nativeHostMainService.ts
 +++ b/src/vs/platform/native/electron-main/nativeHostMainService.ts
-@@ -1155,2 +1155,45 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
+@@ -1155,2 +1155,89 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
  	}
 +
 +	async restartClaudeCodeRouterCli(): Promise<void> {
@@ -55,6 +57,50 @@ index 8cb60a057b8..8b7c0172001 100644
 +			this.logService.info('Claude Code Router CLI restart command executed successfully');
 +		} catch (error) {
 +			this.logService.error('Failed to restart Claude Code Router CLI:', error);
++		}
++	}
++
++	private async getClaudeCodeRouterConfigPath(): Promise<string> {
++		const userHome = this.environmentMainService.userHome.fsPath;
++		if (isWindows) {
++			return `${userHome}\\.claude-code-router\\config.json`;
++		}
++		return `${userHome}/.claude-code-router/config.json`;
++	}
++
++	async readClaudeCodeRouterConfig(_windowId: number | undefined): Promise<string | undefined> {
++		try {
++			const configPath = await this.getClaudeCodeRouterConfigPath();
++			const content = await fs.promises.readFile(configPath, 'utf-8');
++			this.logService.trace('Successfully read Claude Code Router config');
++			return content;
++		} catch (error) {
++			if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
++				this.logService.trace('Claude Code Router config file does not exist');
++				return undefined;
++			}
++			this.logService.error('Error reading Claude Code Router config:', error);
++			throw error;
++		}
++	}
++
++	async writeClaudeCodeRouterConfig(_windowId: number | undefined, configJson: string): Promise<void> {
++		try {
++			const configPath = await this.getClaudeCodeRouterConfigPath();
++			const configDir = dirname(configPath);
++
++			// Ensure directory exists
++			await fs.promises.mkdir(configDir, { recursive: true });
++
++			// Write config file
++			await fs.promises.writeFile(configPath, configJson, 'utf-8');
++			this.logService.info('Successfully wrote Claude Code Router config');
++
++			// Restart CLI after config update
++			await this.restartClaudeCodeRouterCli();
++		} catch (error) {
++			this.logService.error('Error writing Claude Code Router config:', error);
++			throw error;
 +		}
 +	}
  }
@@ -322,7 +368,7 @@ index 00000000000..0540eddeeb3
 +export const API_ENDPOINT = 'https://modelproxy-api.deployai365.com/api/key/get_or_create_sub_key';
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts
 new file mode 100644
-index 00000000000..015be910aaa
+index 00000000000..6a189466e71
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts
 @@ -0,0 +1,46 @@
@@ -346,7 +392,7 @@ index 00000000000..015be910aaa
 +	EditorPaneDescriptor.create(
 +		DeployAISettingsEditor,
 +		DeployAISettingsEditor.ID,
-+		localize('deployaiSettings', 'DeployAI Settings')
++		localize('deployaiSettings', 'Settings')
 +	),
 +	[
 +		new SyncDescriptor(DeployAISettingsInput)
@@ -374,10 +420,10 @@ index 00000000000..015be910aaa
 +);
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..e96753aef02
+index 00000000000..5d89e6fdd88
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
-@@ -0,0 +1,443 @@
+@@ -0,0 +1,626 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -396,18 +442,40 @@ index 00000000000..e96753aef02
 +import { asCssVariable, editorBackground, editorForeground, inputBackground, inputBorder, inputForeground, focusBorder, buttonBackground, buttonForeground, buttonHoverBackground, contrastBorder, widgetShadow, listHoverBackground, listActiveSelectionBackground } from '../../../../platform/theme/common/colorRegistry.js';
 +import { ILocaleService } from '../../../services/localization/common/locale.js';
 +import { Language } from '../../../../base/common/platform.js';
++import { INativeHostService } from '../../../../platform/native/common/native.js';
++
++interface ModelData {
++	id: string;
++	name: string;
++	description: string;
++	provider_slug: string;
++}
++
++interface ModelsResponse {
++	code: number;
++	data: {
++		total: number;
++		models: ModelData[];
++	};
++	message: string;
++}
 +
 +export class DeployAISettingsEditor extends EditorPane {
 +	static readonly ID = 'workbench.editor.deployaiSettings';
 +
 +	private container: HTMLElement | undefined;
 +	private currentLanguage: string = 'zh';
-+	private selectedModel: string = 'claude-3-5-sonnet';
++	private selectedModel: string = 'anthropic/claude-sonnet-4.5';
 +	private isDropdownOpen: boolean = false;
 +	private isCustomOpen: boolean = false;
++	private searchTerm: string = '';
++	private allModels: ModelData[] = [];
++	private filteredModels: ModelData[] = [];
 +
 +	private dropdownButton: HTMLElement | undefined;
 +	private dropdownMenu: HTMLElement | undefined;
++	private searchInput: HTMLInputElement | undefined;
++	private modelOptionsContainer: HTMLElement | undefined;
 +	private customContent: HTMLElement | undefined;
 +	private customChevron: HTMLElement | undefined;
 +
@@ -417,15 +485,35 @@ index 00000000000..e96753aef02
 +		@IThemeService themeService: IThemeService,
 +		@IStorageService storageService: IStorageService,
 +		@ILocaleService private readonly localeService: ILocaleService,
++		@INativeHostService private readonly nativeHostService: INativeHostService,
 +	) {
 +		super(DeployAISettingsEditor.ID, group, telemetryService, themeService, storageService);
 +		this.initializeLanguage();
++		this.fetchModels();
 +	}
 +
 +	private initializeLanguage(): void {
-+		// Get current language from VSCode
 +		const currentLocale = Language.value() || 'en';
 +		this.currentLanguage = currentLocale.startsWith('zh') ? 'zh' : 'en';
++	}
++
++	private async fetchModels(): Promise<void> {
++		try {
++			const response = await fetch('https://modelproxy-api.deployai365.com/api/proxy/models?page=1&pageSize=10000');
++			const data: ModelsResponse = await response.json();
++			if (data.code === 20000 && data.data.models) {
++				this.allModels = data.data.models;
++				this.filteredModels = this.allModels;
++				if (this.allModels.length > 0 && !this.selectedModel) {
++					this.selectedModel = this.allModels[0].id;
++				}
++				if (this.dropdownButton) {
++					this.renderDropdownButton();
++				}
++			}
++		} catch (error) {
++			console.error('Error fetching models:', error);
++		}
 +	}
 +
 +	protected createEditor(parent: HTMLElement): void {
@@ -549,13 +637,39 @@ index 00000000000..e96753aef02
 +		this.dropdownButton.style.cssText = `width: 100%; text-align: left; padding: 12px 16px; background: ${asCssVariable(editorBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; color: ${asCssVariable(editorForeground)};`;
 +
 +		this.dropdownMenu = DOM.append(dropdownContainer, DOM.$('.dropdown-menu'));
-+		this.dropdownMenu.style.cssText = `position: absolute; top: calc(100% + 8px); left: 0; width: 100%; background: ${asCssVariable(inputBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; border-radius: 6px; box-shadow: ${asCssVariable(widgetShadow)}; z-index: 50; overflow: hidden; padding: 4px 0; opacity: 0; transform: scale(0.98) translateY(-8px); pointer-events: none; transition: all 0.2s;`;
++		this.dropdownMenu.style.cssText = `position: absolute; top: calc(100% + 8px); left: 0; width: 100%; background: ${asCssVariable(inputBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; border-radius: 6px; box-shadow: ${asCssVariable(widgetShadow)}; z-index: 50; max-height: 400px; overflow: hidden; opacity: 0; transform: scale(0.98) translateY(-8px); pointer-events: none; transition: all 0.2s;`;
 +
-+		this.renderDropdownContent();
++		// Search input container
++		const searchContainer = DOM.append(this.dropdownMenu, DOM.$('.search-container'));
++		searchContainer.style.cssText = `padding: 12px; border-bottom: 1px solid ${asCssVariable(inputBorder)};`;
++
++		const searchWrapper = DOM.append(searchContainer, DOM.$('.search-wrapper'));
++		searchWrapper.style.cssText = 'position: relative; display: flex';
++
++		this.searchInput = DOM.append(searchWrapper, DOM.$('input[type=text]')) as HTMLInputElement;
++		this.searchInput.placeholder = this.currentLanguage === 'zh' ? '搜索模型...' : 'Search models...';
++		this.searchInput.style.cssText = `width: 100%; padding: 8px 8px 8px 32px; background: ${asCssVariable(editorBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; border-radius: 4px; font-size: 13px; color: ${asCssVariable(inputForeground)};`;
++
++		const searchIcon = DOM.append(searchWrapper, DOM.$('span.codicon.codicon-search'));
++		searchIcon.style.cssText = 'position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: 0.5; pointer-events: none;';
++
++		// Model options container with scroll
++		this.modelOptionsContainer = DOM.append(this.dropdownMenu, DOM.$('.model-options-container'));
++		this.modelOptionsContainer.style.cssText = 'max-height: 300px; overflow-y: auto; padding: 4px 0;';
++
++		this.renderDropdownButton();
 +
 +		this._register(DOM.addDisposableListener(this.dropdownButton, DOM.EventType.CLICK, (e) => {
 +			e.stopPropagation();
 +			this.toggleDropdown();
++		}));
++
++		this._register(DOM.addDisposableListener(this.searchInput, DOM.EventType.INPUT, () => {
++			this.filterModels(this.searchInput!.value);
++		}));
++
++		this._register(DOM.addDisposableListener(this.searchInput, DOM.EventType.CLICK, (e) => {
++			e.stopPropagation();
 +		}));
 +
 +		this._register(DOM.addDisposableListener(document, DOM.EventType.CLICK, () => {
@@ -565,26 +679,67 @@ index 00000000000..e96753aef02
 +		}));
 +	}
 +
-+	private renderDropdownContent(): void {
-+		if (!this.dropdownButton || !this.dropdownMenu) {
++	private getModelIcon(providerSlug: string): string {
++		const provider = providerSlug.toLowerCase();
++		if (provider.includes('anthropic') || provider.includes('claude')) return 'A';
++		if (provider.includes('google') || provider.includes('gemini')) return 'G';
++		if (provider.includes('deepseek')) return 'D';
++		if (provider.includes('openai') || provider.includes('gpt')) return 'O';
++		if (provider.includes('meta') || provider.includes('llama')) return 'M';
++		if (provider.includes('mistral')) return 'Mi';
++		return provider.charAt(0).toUpperCase();
++	}
++
++	private renderHighlightedText(container: HTMLElement, text: string, searchTerm: string): void {
++		if (!searchTerm) {
++			container.textContent = text;
 +			return;
 +		}
 +
-+		const models = [
-+			{ id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', icon: 'A', desc: this.currentLanguage === 'zh' ? '擅长编程与逻辑推理' : 'Best for coding & reasoning' },
-+			{ id: 'gemini-3-pro', name: 'Gemini 3 Pro', icon: 'G', desc: this.currentLanguage === 'zh' ? '强大的多模态处理能力' : 'Multimodal powerhouse' },
-+			{ id: 'deepseek-v3', name: 'DeepSeek V3', icon: 'D', desc: this.currentLanguage === 'zh' ? '开源模型性能之王' : 'Open weights champion' }
-+		];
++		const lowerText = text.toLowerCase();
++		const lowerSearch = searchTerm.toLowerCase();
++		let lastIndex = 0;
++		let index = lowerText.indexOf(lowerSearch);
 +
-+		const selected = models.find(m => m.id === this.selectedModel) || models[0];
++		while (index !== -1) {
++			// Add text before match
++			if (index > lastIndex) {
++				const textNode = document.createTextNode(text.substring(lastIndex, index));
++				container.appendChild(textNode);
++			}
 +
-+		// Render button
++			// Add highlighted match
++			const mark = DOM.append(container, DOM.$('mark'));
++			mark.textContent = text.substring(index, index + searchTerm.length);
++			mark.style.cssText = 'background-color: rgba(59, 130, 246, 0.2); color: inherit; padding: 0; border-radius: 2px;';
++
++			lastIndex = index + searchTerm.length;
++			index = lowerText.indexOf(lowerSearch, lastIndex);
++		}
++
++		// Add remaining text
++		if (lastIndex < text.length) {
++			const textNode = document.createTextNode(text.substring(lastIndex));
++			container.appendChild(textNode);
++		}
++	}
++
++	private renderDropdownButton(): void {
++		if (!this.dropdownButton) return;
++
++		const selected = this.allModels.find(m => m.id === this.selectedModel) || this.allModels[0];
++		if (!selected) {
++			this.dropdownButton.textContent = 'Loading models...';
++			return;
++		}
++
 +		DOM.clearNode(this.dropdownButton);
++
 +		const btnContent = DOM.append(this.dropdownButton, DOM.$('.btn-content'));
 +		btnContent.style.cssText = 'display: flex; align-items: center; gap: 12px;';
 +
 +		const iconBox = DOM.append(btnContent, DOM.$('.icon-box'));
-+		iconBox.textContent = selected.icon;
++		iconBox.textContent = this.getModelIcon(selected.provider_slug);
 +		iconBox.style.cssText = `width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; background: ${asCssVariable(buttonBackground)}; color: ${asCssVariable(buttonForeground)};`;
 +
 +		const textBox = DOM.append(btnContent, DOM.$('.text-box'));
@@ -593,40 +748,72 @@ index 00000000000..e96753aef02
 +		modelName.style.cssText = `font-size: 14px; font-weight: 600; color: ${asCssVariable(editorForeground)}; line-height: 1;`;
 +
 +		const modelDesc = DOM.append(textBox, DOM.$('div'));
-+		modelDesc.textContent = selected.desc;
++		modelDesc.textContent = selected.description.substring(0, 50) + (selected.description.length > 50 ? '...' : '');
 +		modelDesc.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.7; margin-top: 4px; line-height: 1;`;
 +
 +		const chevron = DOM.append(this.dropdownButton, DOM.$('span.chevron'));
 +		chevron.textContent = '▼';
 +		chevron.style.cssText = `font-size: 10px; color: ${asCssVariable(editorForeground)}; opacity: 0.5; transition: transform 0.2s;`;
++	}
 +
-+		// Render menu
-+		DOM.clearNode(this.dropdownMenu);
-+		models.forEach(model => {
-+			const option = DOM.append(this.dropdownMenu!, DOM.$('button.dropdown-option'));
++	private filterModels(searchTerm: string): void {
++		this.searchTerm = searchTerm.trim().toLowerCase();
++
++		if (!this.searchTerm) {
++			this.filteredModels = this.allModels;
++		} else {
++			this.filteredModels = this.allModels.filter(model =>
++				model.name.toLowerCase().includes(this.searchTerm) ||
++				model.id.toLowerCase().includes(this.searchTerm) ||
++				model.provider_slug.toLowerCase().includes(this.searchTerm) ||
++				model.description.toLowerCase().includes(this.searchTerm)
++			);
++		}
++
++		this.renderModelOptions();
++	}
++
++	private renderModelOptions(): void {
++		if (!this.modelOptionsContainer) return;
++
++		DOM.clearNode(this.modelOptionsContainer);
++
++		if (this.filteredModels.length === 0) {
++			const noResults = DOM.append(this.modelOptionsContainer, DOM.$('.no-results'));
++			noResults.textContent = this.currentLanguage === 'zh'
++				? `未找到匹配 "${this.searchTerm}" 的模型`
++				: `No models found matching "${this.searchTerm}"`;
++			noResults.style.cssText = `padding: 16px; text-align: center; font-size: 13px; color: ${asCssVariable(editorForeground)}; opacity: 0.6;`;
++			return;
++		}
++
++		this.filteredModels.forEach(model => {
++			const option = DOM.append(this.modelOptionsContainer!, DOM.$('button.dropdown-option'));
 +			option.style.cssText = `width: 100%; text-align: left; padding: 12px 16px; background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background 0.2s; color: ${asCssVariable(editorForeground)};`;
 +
 +			const optContent = DOM.append(option, DOM.$('.opt-content'));
-+			optContent.style.cssText = 'display: flex; align-items: center; gap: 12px;';
++			optContent.style.cssText = 'display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;';
 +
 +			const optIcon = DOM.append(optContent, DOM.$('.opt-icon'));
-+			optIcon.textContent = model.icon;
-+			optIcon.style.cssText = `width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: ${asCssVariable(buttonBackground)}; color: ${asCssVariable(buttonForeground)};`;
++			optIcon.textContent = this.getModelIcon(model.provider_slug);
++			optIcon.style.cssText = `width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: ${asCssVariable(buttonBackground)}; color: ${asCssVariable(buttonForeground)}; flex-shrink: 0;`;
 +
 +			const optName = DOM.append(optContent, DOM.$('span'));
-+			optName.textContent = model.name;
-+			optName.style.cssText = `font-size: 14px; color: ${asCssVariable(editorForeground)}; font-weight: 500;`;
++			this.renderHighlightedText(optName, model.name, this.searchTerm);
++			optName.style.cssText = `font-size: 14px; color: ${asCssVariable(editorForeground)}; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`;
 +
 +			if (model.id === this.selectedModel) {
 +				const check = DOM.append(option, DOM.$('span'));
 +				check.textContent = '✓';
-+				check.style.cssText = `color: ${asCssVariable(focusBorder)}; font-size: 16px;`;
++				check.style.cssText = `color: ${asCssVariable(focusBorder)}; font-size: 16px; flex-shrink: 0;`;
 +			}
 +
-+			this._register(DOM.addDisposableListener(option, DOM.EventType.CLICK, () => {
++			this._register(DOM.addDisposableListener(option, DOM.EventType.CLICK, async () => {
 +				this.selectedModel = model.id;
-+				this.renderDropdownContent();
++				this.renderDropdownButton();
++				this.renderModelOptions();
 +				this.toggleDropdown();
++				await this.updateConfigFile(model.id);
 +			}));
 +
 +			this._register(DOM.addDisposableListener(option, DOM.EventType.MOUSE_ENTER, () => {
@@ -652,8 +839,7 @@ index 00000000000..e96753aef02
 +		const headerLeft = DOM.append(header, DOM.$('.header-left'));
 +		headerLeft.style.cssText = 'display: flex; align-items: center; gap: 16px;';
 +
-+		const iconBox = DOM.append(headerLeft, DOM.$('.icon-box'));
-+		iconBox.textContent = '⚙';
++		const iconBox = DOM.append(headerLeft, DOM.$('.icon-box.codicon.codicon-settings'));
 +		iconBox.style.cssText = `width: 40px; height: 40px; background: ${asCssVariable(buttonBackground)}; color: ${asCssVariable(buttonForeground)}; border-radius: 6px; border: 1px solid ${asCssVariable(inputBorder)}; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: transform 0.2s;`;
 +
 +		const textBox = DOM.append(headerLeft, DOM.$('.text-box'));
@@ -744,28 +930,62 @@ index 00000000000..e96753aef02
 +	}
 +
 +	private async setLanguage(lang: string): Promise<void> {
-+		// Use VSCode's locale service to switch language
 +		await this.toggleLanguage(lang);
 +	}
 +
 +	private async toggleLanguage(targetLang: string): Promise<void> {
 +		try {
-+			// Determine target locale
 +			const targetLocale = targetLang === 'zh' ? 'zh-cn' : 'en';
-+
-+			// Switch to target language
 +			const languagePackItem = {
 +				id: targetLocale,
 +				label: targetLocale === 'zh-cn' ? '中文' : 'English',
 +				galleryExtension: undefined,
 +				extensionId: undefined
 +			};
-+
-+			// Use VSCode's locale service to switch language
-+			// This will restart the application
 +			await this.localeService.setLocale(languagePackItem, false);
 +		} catch (error) {
 +			console.error('Error toggling language:', error);
++		}
++	}
++
++	private async updateConfigFile(modelId: string): Promise<void> {
++		try {
++			// Read current config
++			const configJson = await this.nativeHostService.readClaudeCodeRouterConfig();
++			let config: any;
++
++			if (configJson) {
++				config = JSON.parse(configJson);
++			} else {
++				// Create default config if not exists
++				config = { Providers: [{ models: [] }], Router: {} };
++			}
++
++			// Ensure config structure exists
++			if (!config.Providers) {
++				config.Providers = [];
++			}
++			if (!config.Providers[0]) {
++				config.Providers[0] = {};
++			}
++			if (!config.Providers[0].models) {
++				config.Providers[0].models = [];
++			}
++
++			// Update models array
++			config.Providers[0].models = [modelId];
++
++			// Update Router
++			config.Router = {
++				default: `deployai,${modelId}`
++			};
++
++			// Write config back
++			await this.nativeHostService.writeClaudeCodeRouterConfig(JSON.stringify(config, null, 2));
++
++			console.log('Config file updated successfully with model:', modelId);
++		} catch (error) {
++			console.error('Error updating config file:', error);
 +		}
 +	}
 +
@@ -784,6 +1004,15 @@ index 00000000000..e96753aef02
 +			this.dropdownButton.style.borderColor = asCssVariable(focusBorder);
 +			if (chevron) {
 +				chevron.style.transform = 'rotate(180deg)';
++			}
++			// Clear search and reset filter
++			if (this.searchInput) {
++				this.searchInput.value = '';
++				this.searchTerm = '';
++				this.filteredModels = this.allModels;
++				this.renderModelOptions();
++				// Focus search input
++				setTimeout(() => this.searchInput?.focus(), 50);
 +			}
 +		} else {
 +			this.dropdownMenu.style.opacity = '0';
@@ -823,7 +1052,7 @@ index 00000000000..e96753aef02
 +}
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsInput.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsInput.ts
 new file mode 100644
-index 00000000000..8753f4694fa
+index 00000000000..c03ebc78d91
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsInput.ts
 @@ -0,0 +1,29 @@
@@ -849,7 +1078,7 @@ index 00000000000..8753f4694fa
 +	}
 +
 +	override getName(): string {
-+		return localize('deployaiSettings', 'DeployAI Settings');
++		return localize('deployaiSettings', 'Settings');
 +	}
 +
 +	override matches(other: EditorInput | unknown): boolean {
@@ -2124,15 +2353,23 @@ index 00000000000..efe114ad6f7
 +	return currentBalanceInstance?.getTotalAmount();
 +}
 diff --git a/src/vs/workbench/services/host/browser/browserHostService.ts b/src/vs/workbench/services/host/browser/browserHostService.ts
-index f7acdcc4d1a..762e74aa045 100644
+index f7acdcc4d1a..a56cf9faa6e 100644
 --- a/src/vs/workbench/services/host/browser/browserHostService.ts
 +++ b/src/vs/workbench/services/host/browser/browserHostService.ts
-@@ -681,2 +681,10 @@ export class BrowserHostService extends Disposable implements IHostService {
+@@ -681,2 +681,18 @@ export class BrowserHostService extends Disposable implements IHostService {
  	//#endregion
 +
 +	//#region Claude Code Router CLI
 +
 +	async restartClaudeCodeRouterCli(): Promise<void> {
++		// Not supported in browser environment
++	}
++
++	async readClaudeCodeRouterConfig(): Promise<string | undefined> {
++		// Not supported in browser environment
++		return undefined;
++	}
++	async writeClaudeCodeRouterConfig(_config: string): Promise<void> {
 +		// Not supported in browser environment
 +	}
 +
@@ -2155,16 +2392,22 @@ index f83c4b79e84..f1f1108188f 100644
 +	//#endregion
  }
 diff --git a/src/vs/workbench/services/host/electron-browser/nativeHostService.ts b/src/vs/workbench/services/host/electron-browser/nativeHostService.ts
-index cb7dcc810e2..3330db66a12 100644
+index cb7dcc810e2..8d6b3ebeb10 100644
 --- a/src/vs/workbench/services/host/electron-browser/nativeHostService.ts
 +++ b/src/vs/workbench/services/host/electron-browser/nativeHostService.ts
-@@ -212,2 +212,10 @@ class WorkbenchHostService extends Disposable implements IHostService {
+@@ -212,2 +212,16 @@ class WorkbenchHostService extends Disposable implements IHostService {
  	//#endregion
 +
 +	//#region Claude Code Router CLI
 +
 +	restartClaudeCodeRouterCli(): Promise<void> {
 +		return this.nativeHostService.restartClaudeCodeRouterCli();
++	}
++	async readClaudeCodeRouterConfig(): Promise<string | undefined> {
++		return this.nativeHostService.readClaudeCodeRouterConfig();
++	}
++	async writeClaudeCodeRouterConfig(configJson: string): Promise<void> {
++		return this.nativeHostService.writeClaudeCodeRouterConfig(configJson);
 +	}
 +
 +	//#endregion
@@ -2179,12 +2422,14 @@ index 112726da453..1cf2ffab76b 100644
 +
  	readonly colorScheme = ColorScheme.DARK;
 diff --git a/src/vs/workbench/test/electron-browser/workbenchTestServices.ts b/src/vs/workbench/test/electron-browser/workbenchTestServices.ts
-index 97bce2f41bc..b6ad93b4fba 100644
+index 97bce2f41bc..219a540896e 100644
 --- a/src/vs/workbench/test/electron-browser/workbenchTestServices.ts
 +++ b/src/vs/workbench/test/electron-browser/workbenchTestServices.ts
-@@ -174,2 +174,3 @@ export class TestNativeHostService implements INativeHostService {
+@@ -174,2 +174,5 @@ export class TestNativeHostService implements INativeHostService {
  	async getScreenshot(rect?: IRectangle): Promise<VSBuffer | undefined> { return undefined; }
 +	async restartClaudeCodeRouterCli(): Promise<void> { }
++	async readClaudeCodeRouterConfig(): Promise<string | undefined> { return undefined; }
++	async writeClaudeCodeRouterConfig(configJson: string): Promise<void> { }
  }
 diff --git a/src/vs/workbench/workbench.common.main.ts b/src/vs/workbench/workbench.common.main.ts
 index 61d63db7b73..6d6ef004bb7 100644
