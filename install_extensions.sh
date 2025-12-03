@@ -143,7 +143,30 @@ inject_chinese_translations() {
   "insufficientBalance": "余额不足，请充值",
   "insufficientBalanceDetail": "您的账户余额不足，点击确定前往充值页面。",
   "ok": "确定",
-  "cancel": "取消"
+  "cancel": "取消",
+  "deployai.settings.title": "设置",
+  "deployai.settings.desc": "管理工作区配置和AI模型偏好设置。",
+  "deployai.settings.general": "常规",
+  "deployai.settings.language": "语言",
+  "deployai.settings.languageDesc": "选择界面语言",
+  "deployai.settings.model": "模型选择",
+  "deployai.settings.selectModel": "选择AI模型",
+  "deployai.settings.modelDesc": "选择用于代码生成的推理引擎",
+  "deployai.settings.customEndpoint": "自定义端点",
+  "deployai.settings.customDesc": "配置本地LLM或私有API部署",
+  "deployai.settings.modelName": "模型名称",
+  "deployai.settings.baseUrl": "API Base URL",
+  "deployai.settings.apiKey": "API密钥",
+  "deployai.settings.testConnection": "测试连接",
+  "deployai.settings.searchModels": "搜索模型...",
+  "deployai.settings.noModelsFound": "未找到匹配 \"{0}\" 的模型",
+  "deployai.settings.inputFieldsNotInitialized": "输入框未初始化",
+  "deployai.settings.modelNameAndBaseUrlRequired": "模型名称和API Base URL为必填项",
+  "deployai.settings.testingConnection": "正在测试连接...",
+  "deployai.settings.connectionSuccessful": "连接成功！配置已保存",
+  "deployai.settings.connectionFailed": "连接失败",
+  "deployai.settings.connectionTimeout": "连接超时，请检查URL是否正确",
+  "deployai.settings.connectionFailedWithError": "连接失败: {0}"
 }
 EOF
 
@@ -188,7 +211,30 @@ try:
         "insufficientBalance": "余额不足，请充值",
         "insufficientBalanceDetail": "您的账户余额不足，点击确定前往充值页面。",
         "ok": "确定",
-        "cancel": "取消"
+        "cancel": "取消",
+        "deployai.settings.title": "设置",
+        "deployai.settings.desc": "管理工作区配置和AI模型偏好设置。",
+        "deployai.settings.general": "常规",
+        "deployai.settings.language": "语言",
+        "deployai.settings.languageDesc": "选择界面语言",
+        "deployai.settings.model": "模型选择",
+        "deployai.settings.selectModel": "选择AI模型",
+        "deployai.settings.modelDesc": "选择用于代码生成的推理引擎",
+        "deployai.settings.customEndpoint": "自定义端点",
+        "deployai.settings.customDesc": "配置本地LLM或私有API部署",
+        "deployai.settings.modelName": "模型名称",
+        "deployai.settings.baseUrl": "API Base URL",
+        "deployai.settings.apiKey": "API密钥",
+        "deployai.settings.testConnection": "测试连接",
+        "deployai.settings.searchModels": "搜索模型...",
+        "deployai.settings.noModelsFound": "未找到匹配 \"{0}\" 的模型",
+        "deployai.settings.inputFieldsNotInitialized": "输入框未初始化",
+        "deployai.settings.modelNameAndBaseUrlRequired": "模型名称和API Base URL为必填项",
+        "deployai.settings.testingConnection": "正在测试连接...",
+        "deployai.settings.connectionSuccessful": "连接成功！配置已保存",
+        "deployai.settings.connectionFailed": "连接失败",
+        "deployai.settings.connectionTimeout": "连接超时，请检查URL是否正确",
+        "deployai.settings.connectionFailedWithError": "连接失败: {0}"
     }
 
     # Inject into titlebar actions

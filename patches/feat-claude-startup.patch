@@ -420,10 +420,10 @@ index 00000000000..6a189466e71
 +);
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..b759250737b
+index 00000000000..608f13c15d9
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
-@@ -0,0 +1,755 @@
+@@ -0,0 +1,747 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -663,7 +663,7 @@ index 00000000000..b759250737b
 +		searchWrapper.style.cssText = 'position: relative; display: flex';
 +
 +		this.searchInput = DOM.append(searchWrapper, DOM.$('input[type=text]')) as HTMLInputElement;
-+		this.searchInput.placeholder = this.currentLanguage === 'zh' ? '搜索模型...' : 'Search models...';
++		this.searchInput.placeholder = localize('deployai.settings.searchModels', 'Search models...');
 +		this.searchInput.style.cssText = `width: 100%; padding: 8px 8px 8px 32px; background: ${asCssVariable(editorBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; border-radius: 4px; font-size: 13px; color: ${asCssVariable(inputForeground)};`;
 +
 +		const searchIcon = DOM.append(searchWrapper, DOM.$('span.codicon.codicon-search'));
@@ -796,9 +796,7 @@ index 00000000000..b759250737b
 +
 +		if (this.filteredModels.length === 0) {
 +			const noResults = DOM.append(this.modelOptionsContainer, DOM.$('.no-results'));
-+			noResults.textContent = this.currentLanguage === 'zh'
-+				? `未找到匹配 "${this.searchTerm}" 的模型`
-+				: `No models found matching "${this.searchTerm}"`;
++			noResults.textContent = localize('deployai.settings.noModelsFound', 'No models found matching "{0}"', this.searchTerm);
 +			noResults.style.cssText = `padding: 16px; text-align: center; font-size: 13px; color: ${asCssVariable(editorForeground)}; opacity: 0.6;`;
 +			return;
 +		}
@@ -1013,7 +1011,7 @@ index 00000000000..b759250737b
 +	private async saveCustomEndpoint(): Promise<void> {
 +		if (!this.customModelNameInput || !this.customBaseUrlInput || !this.customApiKeyInput) {
 +			this.notificationService.error(
-+				this.currentLanguage === 'zh' ? '输入框未初始化' : 'Input fields not initialized'
++				localize('deployai.settings.inputFieldsNotInitialized', 'Input fields not initialized')
 +			);
 +			return;
 +		}
@@ -1024,14 +1022,14 @@ index 00000000000..b759250737b
 +
 +		if (!modelName || !baseUrl) {
 +			this.notificationService.warn(
-+				this.currentLanguage === 'zh' ? '模型名称和API Base URL为必填项' : 'Model name and API Base URL are required'
++				localize('deployai.settings.modelNameAndBaseUrlRequired', 'Model name and API Base URL are required')
 +			);
 +			return;
 +		}
 +
 +		// Test connection
 +		this.notificationService.info(
-+			this.currentLanguage === 'zh' ? '正在测试连接...' : 'Testing connection...'
++			localize('deployai.settings.testingConnection', 'Testing connection...')
 +		);
 +
 +		try {
@@ -1096,21 +1094,15 @@ index 00000000000..b759250737b
 +			await this.nativeHostService.writeClaudeCodeRouterConfig(JSON.stringify(config, null, 2));
 +
 +			this.notificationService.info(
-+				this.currentLanguage === 'zh'
-+					? '连接成功！配置已保存'
-+					: 'Connection successful! Configuration saved'
++				localize('deployai.settings.connectionSuccessful', 'Connection successful! Configuration saved')
 +			);
 +		} catch (error: any) {
-+			let errorMessage = this.currentLanguage === 'zh' ? '连接失败' : 'Connection failed';
++			let errorMessage = localize('deployai.settings.connectionFailed', 'Connection failed');
 +
 +			if (error.name === 'AbortError') {
-+				errorMessage = this.currentLanguage === 'zh'
-+					? '连接超时，请检查URL是否正确'
-+					: 'Connection timeout, please check the URL';
++				errorMessage = localize('deployai.settings.connectionTimeout', 'Connection timeout, please check the URL');
 +			} else if (error.message) {
-+				errorMessage = this.currentLanguage === 'zh'
-+					? `连接失败: ${error.message}`
-+					: `Connection failed: ${error.message}`;
++				errorMessage = localize('deployai.settings.connectionFailedWithError', 'Connection failed: {0}', error.message);
 +			}
 +
 +			this.notificationService.error(errorMessage);
