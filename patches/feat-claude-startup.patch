@@ -420,7 +420,7 @@ index 00000000000..6a189466e71
 +);
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..608f13c15d9
+index 00000000000..66a062529ed
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 @@ -0,0 +1,747 @@
@@ -442,8 +442,8 @@ index 00000000000..608f13c15d9
 +import { asCssVariable, editorBackground, editorForeground, inputBackground, inputBorder, inputForeground, focusBorder, buttonBackground, buttonForeground, buttonHoverBackground, contrastBorder, widgetShadow, listHoverBackground, listActiveSelectionBackground } from '../../../../platform/theme/common/colorRegistry.js';
 +import { ILocaleService } from '../../../services/localization/common/locale.js';
 +import { Language } from '../../../../base/common/platform.js';
-+import { INativeHostService } from '../../../../platform/native/common/native.js';
 +import { INotificationService } from '../../../../platform/notification/common/notification.js';
++import { IHostService } from '../../../services/host/browser/host.js';
 +
 +interface ModelData {
 +	id: string;
@@ -490,7 +490,7 @@ index 00000000000..608f13c15d9
 +		@IThemeService themeService: IThemeService,
 +		@IStorageService storageService: IStorageService,
 +		@ILocaleService private readonly localeService: ILocaleService,
-+		@INativeHostService private readonly nativeHostService: INativeHostService,
++		@IHostService private readonly hostService: IHostService,
 +		@INotificationService private readonly notificationService: INotificationService,
 +	) {
 +		super(DeployAISettingsEditor.ID, group, telemetryService, themeService, storageService);
@@ -970,7 +970,7 @@ index 00000000000..608f13c15d9
 +	private async updateConfigFile(modelId: string): Promise<void> {
 +		try {
 +			// Read current config
-+			const configJson = await this.nativeHostService.readClaudeCodeRouterConfig();
++			const configJson = await this.hostService.readClaudeCodeRouterConfig();
 +			let config: any;
 +
 +			if (configJson) {
@@ -1000,7 +1000,7 @@ index 00000000000..608f13c15d9
 +			};
 +
 +			// Write config back
-+			await this.nativeHostService.writeClaudeCodeRouterConfig(JSON.stringify(config, null, 2));
++			await this.hostService.writeClaudeCodeRouterConfig(JSON.stringify(config, null, 2));
 +
 +			console.log('Config file updated successfully with model:', modelId);
 +		} catch (error) {
@@ -1067,7 +1067,7 @@ index 00000000000..608f13c15d9
 +			}
 +
 +			// Connection successful, save configuration
-+			const configJson = await this.nativeHostService.readClaudeCodeRouterConfig();
++			const configJson = await this.hostService.readClaudeCodeRouterConfig();
 +			let config: any;
 +
 +			if (configJson) {
@@ -1091,7 +1091,7 @@ index 00000000000..608f13c15d9
 +				default: `deployai,${modelName}`
 +			};
 +
-+			await this.nativeHostService.writeClaudeCodeRouterConfig(JSON.stringify(config, null, 2));
++			await this.hostService.writeClaudeCodeRouterConfig(JSON.stringify(config, null, 2));
 +
 +			this.notificationService.info(
 +				localize('deployai.settings.connectionSuccessful', 'Connection successful! Configuration saved')
@@ -2511,10 +2511,10 @@ index f7acdcc4d1a..a56cf9faa6e 100644
 +	//#endregion
  }
 diff --git a/src/vs/workbench/services/host/browser/host.ts b/src/vs/workbench/services/host/browser/host.ts
-index f83c4b79e84..f1f1108188f 100644
+index f83c4b79e84..1039fba92b4 100644
 --- a/src/vs/workbench/services/host/browser/host.ts
 +++ b/src/vs/workbench/services/host/browser/host.ts
-@@ -139,2 +139,11 @@ export interface IHostService {
+@@ -139,2 +139,15 @@ export interface IHostService {
  	//#endregion
 +
 +	//#region Claude Code Router CLI
@@ -2523,6 +2523,10 @@ index f83c4b79e84..f1f1108188f 100644
 +	 * Restart Claude Code Router CLI
 +	 */
 +	restartClaudeCodeRouterCli(): Promise<void>;
++
++	readClaudeCodeRouterConfig(): Promise<string | undefined>;
++
++	writeClaudeCodeRouterConfig(configJson: string): Promise<void>;
 +
 +	//#endregion
  }
@@ -2548,12 +2552,16 @@ index cb7dcc810e2..8d6b3ebeb10 100644
 +	//#endregion
  }
 diff --git a/src/vs/workbench/test/browser/workbenchTestServices.ts b/src/vs/workbench/test/browser/workbenchTestServices.ts
-index 112726da453..1cf2ffab76b 100644
+index 112726da453..7ebbdbd1b6a 100644
 --- a/src/vs/workbench/test/browser/workbenchTestServices.ts
 +++ b/src/vs/workbench/test/browser/workbenchTestServices.ts
-@@ -1435,2 +1435,4 @@ export class TestHostService implements IHostService {
+@@ -1435,2 +1435,8 @@ export class TestHostService implements IHostService {
  
 +	async restartClaudeCodeRouterCli(): Promise<void> { }
++
++	async readClaudeCodeRouterConfig(): Promise<string | undefined> { return undefined; }
++
++	async writeClaudeCodeRouterConfig(_content: string): Promise<void> { }
 +
  	readonly colorScheme = ColorScheme.DARK;
 diff --git a/src/vs/workbench/test/electron-browser/workbenchTestServices.ts b/src/vs/workbench/test/electron-browser/workbenchTestServices.ts
