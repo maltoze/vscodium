@@ -236,10 +236,10 @@ replace "s|\\[\\/\\* BUILTIN_ANNOUNCEMENTS \\*\\/\\]|$( tr -d '\n' < ../announce
 
 ../undo_telemetry.sh
 
-replace 's|Microsoft Corporation|VSCodium|' build/lib/electron.js
-replace 's|Microsoft Corporation|VSCodium|' build/lib/electron.ts
-replace 's|([0-9]) Microsoft|\1 VSCodium|' build/lib/electron.js
-replace 's|([0-9]) Microsoft|\1 VSCodium|' build/lib/electron.ts
+replace 's|Microsoft Corporation|DeployAI Studio|' build/lib/electron.js
+replace 's|Microsoft Corporation|DeployAI Studio|' build/lib/electron.ts
+replace 's|([0-9]) Microsoft|\1 DeployAI|' build/lib/electron.js
+replace 's|([0-9]) Microsoft|\1 DeployAI|' build/lib/electron.ts
 
 if [[ "${OS_NAME}" == "linux" ]]; then
   # microsoft adds their apt repo to sources
