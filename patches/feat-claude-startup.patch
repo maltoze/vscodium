@@ -344,10 +344,10 @@ index f8e5e74bf6b..91bf15751f6 100644
 +});
 diff --git a/src/vs/workbench/common/deployai365.ts b/src/vs/workbench/common/deployai365.ts
 new file mode 100644
-index 00000000000..0540eddeeb3
+index 00000000000..dcf0af92188
 --- /dev/null
 +++ b/src/vs/workbench/common/deployai365.ts
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,19 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -366,6 +366,7 @@ index 00000000000..0540eddeeb3
 +export const CALLBACK_PATH = '/callback';
 +export const USER_INFO_API = `https://launch-api.deployai365.com/api/work-user/${INSTANCE_ID}`;
 +export const API_ENDPOINT = 'https://modelproxy-api.deployai365.com/api/key/get_or_create_sub_key';
++export const MODELPROXY_API_ENDPOINT = 'https://modelproxy-api.deployai365.com/api/v2/chat/completions';
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts
 new file mode 100644
 index 00000000000..6a189466e71
@@ -420,10 +421,10 @@ index 00000000000..6a189466e71
 +);
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..66a062529ed
+index 00000000000..c4aa2ff59ec
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
-@@ -0,0 +1,747 @@
+@@ -0,0 +1,974 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -433,7 +434,7 @@ index 00000000000..66a062529ed
 +import { EditorPane } from '../../../browser/parts/editor/editorPane.js';
 +import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 +import { IThemeService } from '../../../../platform/theme/common/themeService.js';
-+import { IStorageService } from '../../../../platform/storage/common/storage.js';
++import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 +import { IEditorOpenContext } from '../../../common/editor.js';
 +import { CancellationToken } from '../../../../base/common/cancellation.js';
 +import { IEditorGroup } from '../../../services/editor/common/editorGroupsService.js';
@@ -444,6 +445,14 @@ index 00000000000..66a062529ed
 +import { Language } from '../../../../base/common/platform.js';
 +import { INotificationService } from '../../../../platform/notification/common/notification.js';
 +import { IHostService } from '../../../services/host/browser/host.js';
++import { MODELPROXY_API_ENDPOINT, SUB_KEY_STORAGE_KEY } from '../../../common/deployai365.js';
++
++// Storage keys for custom endpoint configuration
++const CUSTOM_MODEL_NAME_KEY = 'deployai.customEndpoint.modelName';
++const CUSTOM_BASE_URL_KEY = 'deployai.customEndpoint.baseUrl';
++const CUSTOM_API_KEY_KEY = 'deployai.customEndpoint.apiKey';
++const USE_CUSTOM_MODEL_KEY = 'deployai.useCustomModel';
++const SELECTED_MODEL_KEY = 'deployai.selectedModel';
 +
 +interface ModelData {
 +	id: string;
@@ -467,6 +476,7 @@ index 00000000000..66a062529ed
 +	private container: HTMLElement | undefined;
 +	private currentLanguage: string = 'zh';
 +	private selectedModel: string = 'anthropic/claude-sonnet-4.5';
++	private useCustomModel: boolean = false;
 +	private isDropdownOpen: boolean = false;
 +	private isCustomOpen: boolean = false;
 +	private searchTerm: string = '';
@@ -483,19 +493,34 @@ index 00000000000..66a062529ed
 +	private customModelNameInput: HTMLInputElement | undefined;
 +	private customBaseUrlInput: HTMLInputElement | undefined;
 +	private customApiKeyInput: HTMLInputElement | undefined;
++	private customSection: HTMLElement | undefined;
 +
 +	constructor(
 +		group: IEditorGroup,
 +		@ITelemetryService telemetryService: ITelemetryService,
 +		@IThemeService themeService: IThemeService,
-+		@IStorageService storageService: IStorageService,
++		@IStorageService private readonly storageService: IStorageService,
 +		@ILocaleService private readonly localeService: ILocaleService,
 +		@IHostService private readonly hostService: IHostService,
 +		@INotificationService private readonly notificationService: INotificationService,
 +	) {
 +		super(DeployAISettingsEditor.ID, group, telemetryService, themeService, storageService);
 +		this.initializeLanguage();
++		this.loadUseCustomModel();
++		this.loadSelectedModel();
 +		this.fetchModels();
++	}
++
++	private loadUseCustomModel(): void {
++		const saved = this.storageService.get(USE_CUSTOM_MODEL_KEY, StorageScope.APPLICATION);
++		this.useCustomModel = saved === 'true';
++	}
++
++	private loadSelectedModel(): void {
++		const saved = this.storageService.get(SELECTED_MODEL_KEY, StorageScope.APPLICATION);
++		if (saved) {
++			this.selectedModel = saved;
++		}
 +	}
 +
 +	private initializeLanguage(): void {
@@ -743,29 +768,46 @@ index 00000000000..66a062529ed
 +	private renderDropdownButton(): void {
 +		if (!this.dropdownButton) return;
 +
-+		const selected = this.allModels.find(m => m.id === this.selectedModel) || this.allModels[0];
-+		if (!selected) {
-+			this.dropdownButton.textContent = 'Loading models...';
-+			return;
-+		}
-+
 +		DOM.clearNode(this.dropdownButton);
 +
-+		const btnContent = DOM.append(this.dropdownButton, DOM.$('.btn-content'));
-+		btnContent.style.cssText = 'display: flex; align-items: center; gap: 12px;';
++		if (this.useCustomModel) {
++			const btnContent = DOM.append(this.dropdownButton, DOM.$('.btn-content'));
++			btnContent.style.cssText = 'display: flex; align-items: center; gap: 12px;';
 +
-+		const iconBox = DOM.append(btnContent, DOM.$('.icon-box'));
-+		iconBox.textContent = this.getModelIcon(selected.provider_slug);
-+		iconBox.style.cssText = `width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; background: ${asCssVariable(buttonBackground)}; color: ${asCssVariable(buttonForeground)};`;
++			const iconBox = DOM.append(btnContent, DOM.$('.icon-box.codicon.codicon-settings'));
++			iconBox.style.cssText = `width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; background: ${asCssVariable(buttonBackground)}; color: ${asCssVariable(buttonForeground)};`;
 +
-+		const textBox = DOM.append(btnContent, DOM.$('.text-box'));
-+		const modelName = DOM.append(textBox, DOM.$('div'));
-+		modelName.textContent = selected.name;
-+		modelName.style.cssText = `font-size: 14px; font-weight: 600; color: ${asCssVariable(editorForeground)}; line-height: 1;`;
++			const textBox = DOM.append(btnContent, DOM.$('.text-box'));
++			const modelName = DOM.append(textBox, DOM.$('div'));
++			modelName.textContent = localize('deployai.settings.useCustomModel', 'Use Custom Model');
++			modelName.style.cssText = `font-size: 14px; font-weight: 600; color: ${asCssVariable(editorForeground)}; line-height: 1;`;
 +
-+		const modelDesc = DOM.append(textBox, DOM.$('div'));
-+		modelDesc.textContent = selected.description.substring(0, 50) + (selected.description.length > 50 ? '...' : '');
-+		modelDesc.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.7; margin-top: 4px; line-height: 1;`;
++			const modelDesc = DOM.append(textBox, DOM.$('div'));
++			modelDesc.textContent = localize('deployai.settings.customModelDesc', 'Using custom endpoint configuration');
++			modelDesc.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.7; margin-top: 4px; line-height: 1;`;
++		} else {
++			const selected = this.allModels.find(m => m.id === this.selectedModel) || this.allModels[0];
++			if (!selected) {
++				this.dropdownButton.textContent = 'Loading models...';
++				return;
++			}
++
++			const btnContent = DOM.append(this.dropdownButton, DOM.$('.btn-content'));
++			btnContent.style.cssText = 'display: flex; align-items: center; gap: 12px;';
++
++			const iconBox = DOM.append(btnContent, DOM.$('.icon-box'));
++			iconBox.textContent = this.getModelIcon(selected.provider_slug);
++			iconBox.style.cssText = `width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; background: ${asCssVariable(buttonBackground)}; color: ${asCssVariable(buttonForeground)};`;
++
++			const textBox = DOM.append(btnContent, DOM.$('.text-box'));
++			const modelName = DOM.append(textBox, DOM.$('div'));
++			modelName.textContent = selected.name;
++			modelName.style.cssText = `font-size: 14px; font-weight: 600; color: ${asCssVariable(editorForeground)}; line-height: 1;`;
++
++			const modelDesc = DOM.append(textBox, DOM.$('div'));
++			modelDesc.textContent = selected.description.substring(0, 50) + (selected.description.length > 50 ? '...' : '');
++			modelDesc.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.7; margin-top: 4px; line-height: 1;`;
++		}
 +
 +		const chevron = DOM.append(this.dropdownButton, DOM.$('span.chevron'));
 +		chevron.textContent = '▼';
@@ -793,6 +835,54 @@ index 00000000000..66a062529ed
 +		if (!this.modelOptionsContainer) return;
 +
 +		DOM.clearNode(this.modelOptionsContainer);
++
++		// Add "Use Custom Model" option at the top (only when not searching)
++		if (!this.searchTerm) {
++			const customOption = DOM.append(this.modelOptionsContainer, DOM.$('button.dropdown-option'));
++			customOption.style.cssText = `width: 100%; text-align: left; padding: 12px 16px; background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background 0.2s; color: ${asCssVariable(editorForeground)}; border-bottom: 1px solid ${asCssVariable(inputBorder)};`;
++
++			const optContent = DOM.append(customOption, DOM.$('.opt-content'));
++			optContent.style.cssText = 'display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;';
++
++			const optIcon = DOM.append(optContent, DOM.$('.opt-icon.codicon.codicon-settings'));
++			optIcon.style.cssText = `width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; background: ${asCssVariable(buttonBackground)}; color: ${asCssVariable(buttonForeground)}; flex-shrink: 0;`;
++
++			const optName = DOM.append(optContent, DOM.$('span'));
++			optName.textContent = localize('deployai.settings.useCustomModel', 'Use Custom Model');
++			optName.style.cssText = `font-size: 14px; color: ${asCssVariable(editorForeground)}; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`;
++
++			if (this.useCustomModel) {
++				const check = DOM.append(customOption, DOM.$('span'));
++				check.textContent = '✓';
++				check.style.cssText = `color: ${asCssVariable(focusBorder)}; font-size: 16px; flex-shrink: 0;`;
++			}
++
++			this._register(DOM.addDisposableListener(customOption, DOM.EventType.CLICK, async () => {
++				this.useCustomModel = true;
++				this.storageService.store(USE_CUSTOM_MODEL_KEY, 'true', StorageScope.APPLICATION, StorageTarget.MACHINE);
++				this.renderDropdownButton();
++				this.renderModelOptions();
++				this.toggleDropdown();
++				// Show custom section
++				if (this.customSection) {
++					this.customSection.style.display = '';
++				}
++				// Auto-expand custom endpoint section
++				if (!this.isCustomOpen) {
++					this.toggleCustomSection();
++				}
++				// Update config with custom endpoint
++				await this.updateCustomEndpointConfig();
++			}));
++
++			this._register(DOM.addDisposableListener(customOption, DOM.EventType.MOUSE_ENTER, () => {
++				customOption.style.background = asCssVariable(listHoverBackground);
++			}));
++
++			this._register(DOM.addDisposableListener(customOption, DOM.EventType.MOUSE_LEAVE, () => {
++				customOption.style.background = 'transparent';
++			}));
++		}
 +
 +		if (this.filteredModels.length === 0) {
 +			const noResults = DOM.append(this.modelOptionsContainer, DOM.$('.no-results'));
@@ -824,9 +914,16 @@ index 00000000000..66a062529ed
 +
 +			this._register(DOM.addDisposableListener(option, DOM.EventType.CLICK, async () => {
 +				this.selectedModel = model.id;
++				this.useCustomModel = false;
++				this.storageService.store(USE_CUSTOM_MODEL_KEY, 'false', StorageScope.APPLICATION, StorageTarget.MACHINE);
++				this.storageService.store(SELECTED_MODEL_KEY, model.id, StorageScope.APPLICATION, StorageTarget.MACHINE);
 +				this.renderDropdownButton();
 +				this.renderModelOptions();
 +				this.toggleDropdown();
++				// Hide custom section
++				if (this.customSection) {
++					this.customSection.style.display = 'none';
++				}
 +				await this.updateConfigFile(model.id);
 +			}));
 +
@@ -841,8 +938,10 @@ index 00000000000..66a062529ed
 +	}
 +
 +	private renderCustomSection(parent: HTMLElement): void {
-+		const section = DOM.append(parent, DOM.$('.settings-section'));
-+		section.style.cssText = 'margin-bottom: 40px;';
++		this.customSection = DOM.append(parent, DOM.$('.settings-section'));
++		this.customSection.style.cssText = this.useCustomModel ? 'margin-bottom: 40px;' : 'margin-bottom: 40px; display: none;';
++
++		const section = this.customSection;
 +
 +		const card = DOM.append(section, DOM.$('.settings-card'));
 +		card.style.cssText = `background: ${asCssVariable(inputBackground)}; border-radius: 6px; border: 1px solid ${asCssVariable(inputBorder)}; overflow: hidden;`;
@@ -886,6 +985,9 @@ index 00000000000..66a062529ed
 +
 +		this.customApiKeyInput = this.renderInput(contentInner, localize('deployai.settings.apiKey', 'API Key'), 'sk-...', true);
 +
++		// Load saved values from storage
++		this.loadCustomEndpointConfig();
++
 +		const btnContainer = DOM.append(contentInner, DOM.$('.btn-container'));
 +		btnContainer.style.cssText = 'padding-top: 8px; display: flex; justify-content: flex-end;';
 +
@@ -921,9 +1023,38 @@ index 00000000000..66a062529ed
 +		labelEl.textContent = label;
 +		labelEl.style.cssText = `font-size: 11px; font-weight: 600; color: ${asCssVariable(editorForeground)}; opacity: 0.7; text-transform: uppercase;`;
 +
-+		const input = DOM.append(container, DOM.$(isPassword ? 'input[type=password]' : 'input[type=text]')) as HTMLInputElement;
++		const inputWrapper = DOM.append(container, DOM.$('.input-wrapper'));
++		inputWrapper.style.cssText = 'position: relative; display: flex; align-items: center;';
++
++		const input = DOM.append(inputWrapper, DOM.$(isPassword ? 'input[type=password]' : 'input[type=text]')) as HTMLInputElement;
 +		input.placeholder = placeholder;
-+		input.style.cssText = `max-width: 100%; padding: 10px 12px; background: ${asCssVariable(inputBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; border-radius: 6px; font-size: 14px; transition: all 0.2s; font-family: monospace; color: ${asCssVariable(inputForeground)};`;
++		input.style.cssText = `max-width: 100%; padding: 10px ${isPassword ? '40px' : '12px'} 10px 12px; background: ${asCssVariable(inputBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; border-radius: 6px; font-size: 14px; transition: all 0.2s; font-family: monospace; color: ${asCssVariable(inputForeground)}; flex: 1;`;
++		input.type = isPassword ? 'password' : 'text';
++
++		if (isPassword) {
++			const eyeIcon = DOM.append(inputWrapper, DOM.$('span.codicon.codicon-eye'));
++			eyeIcon.style.cssText = `position: absolute; right: 12px; cursor: pointer; font-size: 16px; color: ${asCssVariable(editorForeground)}; opacity: 0.6; transition: opacity 0.2s;`;
++
++			this._register(DOM.addDisposableListener(eyeIcon, DOM.EventType.CLICK, () => {
++				if (input.type === 'password') {
++					input.type = 'text';
++					eyeIcon.classList.remove('codicon-eye');
++					eyeIcon.classList.add('codicon-eye-closed');
++				} else {
++					input.type = 'password';
++					eyeIcon.classList.remove('codicon-eye-closed');
++					eyeIcon.classList.add('codicon-eye');
++				}
++			}));
++
++			this._register(DOM.addDisposableListener(eyeIcon, DOM.EventType.MOUSE_ENTER, () => {
++				eyeIcon.style.opacity = '1';
++			}));
++
++			this._register(DOM.addDisposableListener(eyeIcon, DOM.EventType.MOUSE_LEAVE, () => {
++				eyeIcon.style.opacity = '0.6';
++			}));
++		}
 +
 +		this._register(DOM.addDisposableListener(input, DOM.EventType.FOCUS, () => {
 +			input.style.outline = 'none';
@@ -993,6 +1124,9 @@ index 00000000000..66a062529ed
 +
 +			// Update models array
 +			config.Providers[0].models = [modelId];
++			config.Providers[0].api_base_url = MODELPROXY_API_ENDPOINT;
++			const apiKey = this.storageService.get(SUB_KEY_STORAGE_KEY, StorageScope.APPLICATION, '');
++			config.Providers[0].api_key = apiKey;
 +
 +			// Update Router
 +			config.Router = {
@@ -1093,6 +1227,11 @@ index 00000000000..66a062529ed
 +
 +			await this.hostService.writeClaudeCodeRouterConfig(JSON.stringify(config, null, 2));
 +
++			// Save to storage
++			this.storageService.store(CUSTOM_MODEL_NAME_KEY, modelName, StorageScope.APPLICATION, StorageTarget.MACHINE);
++			this.storageService.store(CUSTOM_BASE_URL_KEY, baseUrl, StorageScope.APPLICATION, StorageTarget.MACHINE);
++			this.storageService.store(CUSTOM_API_KEY_KEY, apiKey, StorageScope.APPLICATION, StorageTarget.MACHINE);
++
 +			this.notificationService.info(
 +				localize('deployai.settings.connectionSuccessful', 'Connection successful! Configuration saved')
 +			);
@@ -1107,6 +1246,95 @@ index 00000000000..66a062529ed
 +
 +			this.notificationService.error(errorMessage);
 +			console.error('Error testing custom endpoint:', error);
++		}
++	}
++
++	private loadCustomEndpointConfig(): void {
++		if (!this.customModelNameInput || !this.customBaseUrlInput || !this.customApiKeyInput) {
++			return;
++		}
++
++		// Load saved values from storage
++		const savedModelName = this.storageService.get(CUSTOM_MODEL_NAME_KEY, StorageScope.APPLICATION);
++		const savedBaseUrl = this.storageService.get(CUSTOM_BASE_URL_KEY, StorageScope.APPLICATION);
++		const savedApiKey = this.storageService.get(CUSTOM_API_KEY_KEY, StorageScope.APPLICATION);
++
++		if (savedModelName) {
++			this.customModelNameInput.value = savedModelName;
++		}
++		if (savedBaseUrl) {
++			this.customBaseUrlInput.value = savedBaseUrl;
++		}
++		if (savedApiKey) {
++			this.customApiKeyInput.value = savedApiKey;
++		}
++
++		// Add blur event listeners to update config when inputs lose focus
++		this._register(DOM.addDisposableListener(this.customModelNameInput, DOM.EventType.BLUR, async () => {
++			await this.updateCustomEndpointConfig();
++		}));
++
++		this._register(DOM.addDisposableListener(this.customBaseUrlInput, DOM.EventType.BLUR, async () => {
++			await this.updateCustomEndpointConfig();
++		}));
++
++		this._register(DOM.addDisposableListener(this.customApiKeyInput, DOM.EventType.BLUR, async () => {
++			await this.updateCustomEndpointConfig();
++		}));
++	}
++
++	private async updateCustomEndpointConfig(): Promise<void> {
++		if (!this.useCustomModel) {
++			return;
++		}
++
++		if (!this.customModelNameInput || !this.customBaseUrlInput || !this.customApiKeyInput) {
++			return;
++		}
++
++		const modelName = this.customModelNameInput.value.trim();
++		const baseUrl = this.customBaseUrlInput.value.trim();
++		const apiKey = this.customApiKeyInput.value.trim();
++
++		if (!modelName || !baseUrl) {
++			return;
++		}
++
++		try {
++			const configJson = await this.hostService.readClaudeCodeRouterConfig();
++			let config: any;
++
++			if (configJson) {
++				config = JSON.parse(configJson);
++			} else {
++				config = { Providers: [{}], Router: {} };
++			}
++
++			if (!config.Providers) {
++				config.Providers = [];
++			}
++			if (!config.Providers[0]) {
++				config.Providers[0] = {};
++			}
++
++			config.Providers[0].api_base_url = baseUrl;
++			config.Providers[0].api_key = apiKey;
++			config.Providers[0].models = [modelName];
++
++			config.Router = {
++				default: `deployai,${modelName}`
++			};
++
++			await this.hostService.writeClaudeCodeRouterConfig(JSON.stringify(config, null, 2));
++
++			// Save to storage
++			this.storageService.store(CUSTOM_MODEL_NAME_KEY, modelName, StorageScope.APPLICATION, StorageTarget.MACHINE);
++			this.storageService.store(CUSTOM_BASE_URL_KEY, baseUrl, StorageScope.APPLICATION, StorageTarget.MACHINE);
++			this.storageService.store(CUSTOM_API_KEY_KEY, apiKey, StorageScope.APPLICATION, StorageTarget.MACHINE);
++
++			console.log('Custom endpoint config updated successfully');
++		} catch (error) {
++			console.error('Error updating custom endpoint config:', error);
 +		}
 +	}
 +
