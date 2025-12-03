@@ -144,6 +144,7 @@ inject_chinese_translations() {
   "insufficientBalanceDetail": "您的账户余额不足，点击确定前往充值页面。",
   "ok": "确定",
   "cancel": "取消",
+  "settings": "设置",
   "deployai.settings.title": "设置",
   "deployai.settings.desc": "管理工作区配置和AI模型偏好设置。",
   "deployai.settings.general": "常规",
@@ -173,7 +174,8 @@ EOF
     # Merge translations into multiple sections
     jq --slurpfile custom "$TEMP_FILE" \
        '.contents["vs/workbench/browser/parts/titlebar/titlebarActions"] += $custom[0] |
-        .contents["vs/workbench/contrib/startupSplash/browser/startupSplash"] += $custom[0]' \
+        .contents["vs/workbench/contrib/startupSplash/browser/startupSplash"] += $custom[0] |
+        .contents["vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor"] += $custom[0]' \
        "$TRANSLATIONS_FILE" > "${TRANSLATIONS_FILE}.tmp" && \
     mv "${TRANSLATIONS_FILE}.tmp" "$TRANSLATIONS_FILE"
 
@@ -212,6 +214,7 @@ try:
         "insufficientBalanceDetail": "您的账户余额不足，点击确定前往充值页面。",
         "ok": "确定",
         "cancel": "取消",
+        "settings": "设置",
         "deployai.settings.title": "设置",
         "deployai.settings.desc": "管理工作区配置和AI模型偏好设置。",
         "deployai.settings.general": "常规",
@@ -248,6 +251,12 @@ try:
     if splash_key not in data['contents']:
         data['contents'][splash_key] = {}
     data['contents'][splash_key].update(custom_translations)
+
+    # Inject into deployai settings
+    settings_key = 'vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor'
+    if settings_key not in data['contents']:
+        data['contents'][settings_key] = {}
+    data['contents'][settings_key].update(custom_translations)
 
     with open(translations_file, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=8)
