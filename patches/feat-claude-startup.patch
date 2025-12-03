@@ -420,10 +420,10 @@ index 00000000000..6a189466e71
 +);
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..5d89e6fdd88
+index 00000000000..b759250737b
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
-@@ -0,0 +1,626 @@
+@@ -0,0 +1,755 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -443,6 +443,7 @@ index 00000000000..5d89e6fdd88
 +import { ILocaleService } from '../../../services/localization/common/locale.js';
 +import { Language } from '../../../../base/common/platform.js';
 +import { INativeHostService } from '../../../../platform/native/common/native.js';
++import { INotificationService } from '../../../../platform/notification/common/notification.js';
 +
 +interface ModelData {
 +	id: string;
@@ -479,6 +480,10 @@ index 00000000000..5d89e6fdd88
 +	private customContent: HTMLElement | undefined;
 +	private customChevron: HTMLElement | undefined;
 +
++	private customModelNameInput: HTMLInputElement | undefined;
++	private customBaseUrlInput: HTMLInputElement | undefined;
++	private customApiKeyInput: HTMLInputElement | undefined;
++
 +	constructor(
 +		group: IEditorGroup,
 +		@ITelemetryService telemetryService: ITelemetryService,
@@ -486,6 +491,7 @@ index 00000000000..5d89e6fdd88
 +		@IStorageService storageService: IStorageService,
 +		@ILocaleService private readonly localeService: ILocaleService,
 +		@INativeHostService private readonly nativeHostService: INativeHostService,
++		@INotificationService private readonly notificationService: INotificationService,
 +	) {
 +		super(DeployAISettingsEditor.ID, group, telemetryService, themeService, storageService);
 +		this.initializeLanguage();
@@ -570,8 +576,13 @@ index 00000000000..5d89e6fdd88
 +		section.style.cssText = 'margin-bottom: 40px;';
 +
 +		const sectionTitle = DOM.append(section, DOM.$('h3'));
-+		sectionTitle.textContent = localize('deployai.settings.general', 'GENERAL');
-+		sectionTitle.style.cssText = `font-size: 11px; font-weight: 700; color: ${asCssVariable(editorForeground)}; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;`;
++		sectionTitle.style.cssText = `font-size: 11px; font-weight: 700; color: ${asCssVariable(editorForeground)}; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; display: flex; align-items: center; gap: 6px;`;
++
++		const titleIcon = DOM.append(sectionTitle, DOM.$('span.codicon.codicon-globe'));
++		titleIcon.style.cssText = 'font-size: 12px;';
++
++		const titleText = DOM.append(sectionTitle, DOM.$('span'));
++		titleText.textContent = localize('deployai.settings.general', 'GENERAL');
 +
 +		const card = DOM.append(section, DOM.$('.settings-card'));
 +		card.style.cssText = `background: ${asCssVariable(inputBackground)}; border-radius: 6px; border: 1px solid ${asCssVariable(inputBorder)}; padding: 20px; display: flex; align-items: center; justify-content: space-between;`;
@@ -613,8 +624,13 @@ index 00000000000..5d89e6fdd88
 +		section.style.cssText = 'margin-bottom: 40px; position: relative; z-index: 20;';
 +
 +		const sectionTitle = DOM.append(section, DOM.$('h3'));
-+		sectionTitle.textContent = localize('deployai.settings.model', 'MODEL SELECTION');
-+		sectionTitle.style.cssText = `font-size: 11px; font-weight: 700; color: ${asCssVariable(editorForeground)}; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;`;
++		sectionTitle.style.cssText = `font-size: 11px; font-weight: 700; color: ${asCssVariable(editorForeground)}; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; display: flex; align-items: center; gap: 6px;`;
++
++		const titleIcon = DOM.append(sectionTitle, DOM.$('span.codicon.codicon-chip'));
++		titleIcon.style.cssText = 'font-size: 12px;';
++
++		const titleText = DOM.append(sectionTitle, DOM.$('span'));
++		titleText.textContent = localize('deployai.settings.model', 'MODEL SELECTION');
 +
 +		const card = DOM.append(section, DOM.$('.settings-card'));
 +		card.style.cssText = `background: ${asCssVariable(inputBackground)}; border-radius: 6px; border: 1px solid ${asCssVariable(inputBorder)}; padding: 20px;`;
@@ -867,10 +883,10 @@ index 00000000000..5d89e6fdd88
 +		const inputsGrid = DOM.append(contentInner, DOM.$('.inputs-grid'));
 +		inputsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 20px;';
 +
-+		this.renderInput(inputsGrid, localize('deployai.settings.modelName', 'Model Name'), 'llama-3-70b-instruct');
-+		this.renderInput(inputsGrid, localize('deployai.settings.baseUrl', 'API Base URL'), 'http://localhost:11434/v1');
++		this.customModelNameInput = this.renderInput(inputsGrid, localize('deployai.settings.modelName', 'Model Name'), 'llama-3-70b-instruct');
++		this.customBaseUrlInput = this.renderInput(inputsGrid, localize('deployai.settings.baseUrl', 'API Base URL'), 'http://localhost:11434/v1');
 +
-+		this.renderInput(contentInner, localize('deployai.settings.apiKey', 'API Key'), 'sk-...', true);
++		this.customApiKeyInput = this.renderInput(contentInner, localize('deployai.settings.apiKey', 'API Key'), 'sk-...', true);
 +
 +		const btnContainer = DOM.append(contentInner, DOM.$('.btn-container'));
 +		btnContainer.style.cssText = 'padding-top: 8px; display: flex; justify-content: flex-end;';
@@ -879,6 +895,9 @@ index 00000000000..5d89e6fdd88
 +		testBtn.textContent = localize('deployai.settings.testConnection', 'Test Connection');
 +		testBtn.style.cssText = `font-size: 12px; font-weight: 500; color: ${asCssVariable(buttonForeground)}; background: ${asCssVariable(buttonBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s;`;
 +
++		this._register(DOM.addDisposableListener(testBtn, DOM.EventType.CLICK, async () => {
++			await this.saveCustomEndpoint();
++		}));
 +		this._register(DOM.addDisposableListener(header, DOM.EventType.CLICK, () => this.toggleCustomSection()));
 +		this._register(DOM.addDisposableListener(header, DOM.EventType.MOUSE_ENTER, () => {
 +			header.style.background = asCssVariable(listHoverBackground);
@@ -896,7 +915,7 @@ index 00000000000..5d89e6fdd88
 +		}));
 +	}
 +
-+	private renderInput(parent: HTMLElement, label: string, placeholder: string, isPassword: boolean = false): void {
++	private renderInput(parent: HTMLElement, label: string, placeholder: string, isPassword: boolean = false): HTMLInputElement {
 +		const container = DOM.append(parent, DOM.$('.input-container'));
 +		container.style.cssText = 'display: flex; flex-direction: column; gap: 6px;';
 +
@@ -906,7 +925,7 @@ index 00000000000..5d89e6fdd88
 +
 +		const input = DOM.append(container, DOM.$(isPassword ? 'input[type=password]' : 'input[type=text]')) as HTMLInputElement;
 +		input.placeholder = placeholder;
-+		input.style.cssText = `width: 100%; padding: 10px 12px; background: ${asCssVariable(inputBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; border-radius: 6px; font-size: 14px; transition: all 0.2s; font-family: monospace; color: ${asCssVariable(inputForeground)};`;
++		input.style.cssText = `max-width: 100%; padding: 10px 12px; background: ${asCssVariable(inputBackground)}; border: 1px solid ${asCssVariable(inputBorder)}; border-radius: 6px; font-size: 14px; transition: all 0.2s; font-family: monospace; color: ${asCssVariable(inputForeground)};`;
 +
 +		this._register(DOM.addDisposableListener(input, DOM.EventType.FOCUS, () => {
 +			input.style.outline = 'none';
@@ -918,6 +937,8 @@ index 00000000000..5d89e6fdd88
 +			input.style.borderColor = asCssVariable(inputBorder);
 +			input.style.boxShadow = 'none';
 +		}));
++
++		return input;
 +	}
 +
 +	private renderFooter(parent: HTMLElement): void {
@@ -986,6 +1007,114 @@ index 00000000000..5d89e6fdd88
 +			console.log('Config file updated successfully with model:', modelId);
 +		} catch (error) {
 +			console.error('Error updating config file:', error);
++		}
++	}
++
++	private async saveCustomEndpoint(): Promise<void> {
++		if (!this.customModelNameInput || !this.customBaseUrlInput || !this.customApiKeyInput) {
++			this.notificationService.error(
++				this.currentLanguage === 'zh' ? '输入框未初始化' : 'Input fields not initialized'
++			);
++			return;
++		}
++
++		const modelName = this.customModelNameInput.value.trim();
++		const baseUrl = this.customBaseUrlInput.value.trim();
++		const apiKey = this.customApiKeyInput.value.trim();
++
++		if (!modelName || !baseUrl) {
++			this.notificationService.warn(
++				this.currentLanguage === 'zh' ? '模型名称和API Base URL为必填项' : 'Model name and API Base URL are required'
++			);
++			return;
++		}
++
++		// Test connection
++		this.notificationService.info(
++			this.currentLanguage === 'zh' ? '正在测试连接...' : 'Testing connection...'
++		);
++
++		try {
++			// Test endpoint connectivity with a minimal chat completion request
++			const testUrl = baseUrl;
++			const headers: HeadersInit = {
++				'Content-Type': 'application/json'
++			};
++
++			if (apiKey) {
++				headers['Authorization'] = `Bearer ${apiKey}`;
++			}
++
++			const controller = new AbortController();
++			const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
++
++			// Send a minimal test request
++			const response = await fetch(testUrl, {
++				method: 'POST',
++				headers,
++				signal: controller.signal,
++				body: JSON.stringify({
++					model: modelName,
++					messages: [{ role: 'user', content: 'test' }],
++					max_tokens: 1
++				})
++			});
++
++			clearTimeout(timeoutId);
++
++			// Accept both 200 OK and 400/401 as signs the endpoint exists
++			// 400 might mean invalid request format
++			if (!response.ok && response.status !== 400) {
++				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
++			}
++
++			// Connection successful, save configuration
++			const configJson = await this.nativeHostService.readClaudeCodeRouterConfig();
++			let config: any;
++
++			if (configJson) {
++				config = JSON.parse(configJson);
++			} else {
++				config = { Providers: [{}], Router: {} };
++			}
++
++			if (!config.Providers) {
++				config.Providers = [];
++			}
++			if (!config.Providers[0]) {
++				config.Providers[0] = {};
++			}
++
++			config.Providers[0].api_base_url = baseUrl;
++			config.Providers[0].api_key = apiKey;
++			config.Providers[0].models = [modelName];
++
++			config.Router = {
++				default: `deployai,${modelName}`
++			};
++
++			await this.nativeHostService.writeClaudeCodeRouterConfig(JSON.stringify(config, null, 2));
++
++			this.notificationService.info(
++				this.currentLanguage === 'zh'
++					? '连接成功！配置已保存'
++					: 'Connection successful! Configuration saved'
++			);
++		} catch (error: any) {
++			let errorMessage = this.currentLanguage === 'zh' ? '连接失败' : 'Connection failed';
++
++			if (error.name === 'AbortError') {
++				errorMessage = this.currentLanguage === 'zh'
++					? '连接超时，请检查URL是否正确'
++					: 'Connection timeout, please check the URL';
++			} else if (error.message) {
++				errorMessage = this.currentLanguage === 'zh'
++					? `连接失败: ${error.message}`
++					: `Connection failed: ${error.message}`;
++			}
++
++			this.notificationService.error(errorMessage);
++			console.error('Error testing custom endpoint:', error);
 +		}
 +	}
 +
@@ -1121,10 +1250,10 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..efe114ad6f7
+index 00000000000..5d545312089
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,1227 @@
+@@ -0,0 +1,1241 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -1258,8 +1387,12 @@ index 00000000000..efe114ad6f7
 +	private async init(): Promise<void> {
 +		this.initializeLanguage();
 +		this.registerUrlHandler();
-+		await this.fetchBannerData();
++		// Show splash immediately, then load banner data
 +		this.showSplash();
++		// Fetch banner data asynchronously and update carousel
++		this.fetchBannerData().then(() => {
++			this.updateCarouselWithBannerData();
++		});
 +		this.startBalanceCheck();
 +	}
 +
@@ -1580,6 +1713,16 @@ index 00000000000..efe114ad6f7
 +			slides[this.currentSlide].classList.add('active');
 +			dots[this.currentSlide].classList.add('active');
 +		}, 5000);
++	}
++
++	private updateCarouselWithBannerData(): void {
++		// If no banner data was fetched, keep using default slides
++		if (this.slidesData.length === 0) {
++			return;
++		}
++
++		// Carousel is already showing default slides, no need to update
++		// Banner data will be used on next app launch
 +	}
 +
 +	private addEventListeners(): void {
