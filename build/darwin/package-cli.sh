@@ -128,8 +128,13 @@ function stopCLIService() {
 function activate(context) {
     console.log('[Startup Claude] Activating...');
 
+    process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
+    process.env.ANTHROPIC_AUTH_TOKEN = 'test';
+    process.env.ANTHROPIC_API_KEY = 'test';
+    process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+
     // Start CLI service
-    startCLIService(context);
+    // startCLIService(context);
 
     // Register cleanup on deactivate
     context.subscriptions.push({
