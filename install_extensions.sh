@@ -167,7 +167,8 @@ inject_chinese_translations() {
   "deployai.settings.connectionSuccessful": "连接成功！配置已保存",
   "deployai.settings.connectionFailed": "连接失败",
   "deployai.settings.connectionTimeout": "连接超时，请检查URL是否正确",
-  "deployai.settings.connectionFailedWithError": "连接失败: {0}"
+  "deployai.settings.connectionFailedWithError": "连接失败: {0}",
+  "deployai.settings.useCustomModel": "使用自定义模型"
 }
 EOF
 
@@ -237,7 +238,8 @@ try:
         "deployai.settings.connectionSuccessful": "连接成功！配置已保存",
         "deployai.settings.connectionFailed": "连接失败",
         "deployai.settings.connectionTimeout": "连接超时，请检查URL是否正确",
-        "deployai.settings.connectionFailedWithError": "连接失败: {0}"
+        "deployai.settings.connectionFailedWithError": "连接失败: {0}",
+        "deployai.settings.useCustomModel": "使用自定义模型"
     }
 
     # Inject into titlebar actions
