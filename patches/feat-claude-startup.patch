@@ -11,15 +11,13 @@ index 43729958372..745a9047341 100644
 +	writeClaudeCodeRouterConfig(configJson: string): Promise<void>;
  }
 diff --git a/src/vs/platform/native/electron-main/nativeHostMainService.ts b/src/vs/platform/native/electron-main/nativeHostMainService.ts
-index 8cb60a057b8..76f4b315826 100644
+index 8cb60a057b8..53c3c0f5996 100644
 --- a/src/vs/platform/native/electron-main/nativeHostMainService.ts
 +++ b/src/vs/platform/native/electron-main/nativeHostMainService.ts
 @@ -1155,2 +1155,89 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
  	}
 +
 +	async restartClaudeCodeRouterCli(): Promise<void> {
-+		const { spawn } = await import('child_process');
-+
 +		// Get CLI path based on platform and appRoot
 +		let cliPath: string;
 +		if (isMacintosh) {
@@ -49,11 +47,13 @@ index 8cb60a057b8..76f4b315826 100644
 +
 +		// Execute CLI restart command
 +		try {
-+			const child = spawn(cliPath, ['restart'], {
-+				detached: true,
-+				stdio: 'ignore'
-+			});
-+			child.unref();
++			const { stdout, stderr } = await promisify(exec)(`"${cliPath}" restart`);
++			if (stdout) {
++				this.logService.info('Claude Code Router CLI restart stdout:', stdout.trim());
++			}
++			if (stderr) {
++				this.logService.warn('Claude Code Router CLI restart stderr:', stderr.trim());
++			}
 +			this.logService.info('Claude Code Router CLI restart command executed successfully');
 +		} catch (error) {
 +			this.logService.error('Failed to restart Claude Code Router CLI:', error);
