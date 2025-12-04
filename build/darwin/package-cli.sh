@@ -137,9 +137,9 @@ function activate(context) {
     // startCLIService(context);
 
     // Register cleanup on deactivate
-    context.subscriptions.push({
-        dispose: stopCLIService
-    });
+    // context.subscriptions.push({
+    //     dispose: stopCLIService
+    // });
 
     // Give Claude Code extension time to load, then open Claude Code editor
     setTimeout(() => {
@@ -154,7 +154,7 @@ function activate(context) {
 }
 
 function deactivate() {
-    stopCLIService();
+    // stopCLIService();
 }
 
 module.exports = {
