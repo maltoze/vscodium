@@ -344,10 +344,10 @@ index f8e5e74bf6b..91bf15751f6 100644
 +});
 diff --git a/src/vs/workbench/common/deployai365.ts b/src/vs/workbench/common/deployai365.ts
 new file mode 100644
-index 00000000000..dcf0af92188
+index 00000000000..83c35fea10e
 --- /dev/null
 +++ b/src/vs/workbench/common/deployai365.ts
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,26 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -367,6 +367,13 @@ index 00000000000..dcf0af92188
 +export const USER_INFO_API = `https://launch-api.deployai365.com/api/work-user/${INSTANCE_ID}`;
 +export const API_ENDPOINT = 'https://modelproxy-api.deployai365.com/api/key/get_or_create_sub_key';
 +export const MODELPROXY_API_ENDPOINT = 'https://modelproxy-api.deployai365.com/api/v2/chat/completions';
++
++// Storage keys for custom endpoint configuration
++export const CUSTOM_MODEL_NAME_KEY = 'deployai.customEndpoint.modelName';
++export const CUSTOM_BASE_URL_KEY = 'deployai.customEndpoint.baseUrl';
++export const CUSTOM_API_KEY_KEY = 'deployai.customEndpoint.apiKey';
++export const USE_CUSTOM_MODEL_KEY = 'deployai.useCustomModel';
++export const SELECTED_MODEL_KEY = 'deployai.selectedModel';
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts
 new file mode 100644
 index 00000000000..6a189466e71
@@ -421,10 +428,10 @@ index 00000000000..6a189466e71
 +);
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..c4aa2ff59ec
+index 00000000000..b4d1131e9fa
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
-@@ -0,0 +1,974 @@
+@@ -0,0 +1,967 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -445,14 +452,7 @@ index 00000000000..c4aa2ff59ec
 +import { Language } from '../../../../base/common/platform.js';
 +import { INotificationService } from '../../../../platform/notification/common/notification.js';
 +import { IHostService } from '../../../services/host/browser/host.js';
-+import { MODELPROXY_API_ENDPOINT, SUB_KEY_STORAGE_KEY } from '../../../common/deployai365.js';
-+
-+// Storage keys for custom endpoint configuration
-+const CUSTOM_MODEL_NAME_KEY = 'deployai.customEndpoint.modelName';
-+const CUSTOM_BASE_URL_KEY = 'deployai.customEndpoint.baseUrl';
-+const CUSTOM_API_KEY_KEY = 'deployai.customEndpoint.apiKey';
-+const USE_CUSTOM_MODEL_KEY = 'deployai.useCustomModel';
-+const SELECTED_MODEL_KEY = 'deployai.selectedModel';
++import { MODELPROXY_API_ENDPOINT, SUB_KEY_STORAGE_KEY, CUSTOM_MODEL_NAME_KEY, CUSTOM_BASE_URL_KEY, CUSTOM_API_KEY_KEY, USE_CUSTOM_MODEL_KEY, SELECTED_MODEL_KEY } from '../../../common/deployai365.js';
 +
 +interface ModelData {
 +	id: string;
@@ -1470,10 +1470,10 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..5d545312089
+index 00000000000..be29f2d8c16
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,1241 @@
+@@ -0,0 +1,1248 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -1506,7 +1506,7 @@ index 00000000000..5d545312089
 +import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 +import { IHostService } from '../../../services/host/browser/host.js';
 +import { IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
-+import { INSTANCE_ID, TOKEN_STORAGE_KEY, SUB_KEY_STORAGE_KEY, BALANCE_STORAGE_KEY, CALLBACK_SCHEME, CALLBACK_AUTHORITY, CALLBACK_PATH, USER_INFO_API, API_ENDPOINT } from '../../../common/deployai365.js';
++import { INSTANCE_ID, TOKEN_STORAGE_KEY, SUB_KEY_STORAGE_KEY, BALANCE_STORAGE_KEY, CALLBACK_SCHEME, CALLBACK_AUTHORITY, CALLBACK_PATH, USER_INFO_API, API_ENDPOINT, USE_CUSTOM_MODEL_KEY } from '../../../common/deployai365.js';
 +import { ILocaleService } from '../../../services/localization/common/locale.js';
 +import { localize2 } from '../../../../nls.js';
 +
@@ -2294,7 +2294,14 @@ index 00000000000..5d545312089
 +					StorageScope.APPLICATION,
 +					StorageTarget.MACHINE
 +				);
-+				await this.updateConfigFile(subKey);
++				const useCustomModel = this.storageService.getBoolean(
++					USE_CUSTOM_MODEL_KEY,
++					StorageScope.APPLICATION,
++					false
++				);
++				if (!useCustomModel) {
++					await this.updateConfigFile(subKey);
++				}
 +			}
 +		} catch (error) {
 +			console.error('Error fetching sub key:', error);
