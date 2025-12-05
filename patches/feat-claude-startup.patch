@@ -428,10 +428,10 @@ index 00000000000..6a189466e71
 +);
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..b4d1131e9fa
+index 00000000000..63ed4657381
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
-@@ -0,0 +1,967 @@
+@@ -0,0 +1,970 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -1127,6 +1127,7 @@ index 00000000000..b4d1131e9fa
 +			config.Providers[0].api_base_url = MODELPROXY_API_ENDPOINT;
 +			const apiKey = this.storageService.get(SUB_KEY_STORAGE_KEY, StorageScope.APPLICATION, '');
 +			config.Providers[0].api_key = apiKey;
++			config.Providers[0].name = 'deployai';
 +
 +			// Update Router
 +			config.Router = {
@@ -1220,6 +1221,7 @@ index 00000000000..b4d1131e9fa
 +			config.Providers[0].api_base_url = baseUrl;
 +			config.Providers[0].api_key = apiKey;
 +			config.Providers[0].models = [modelName];
++			config.Providers[0].name = 'deployai';
 +
 +			config.Router = {
 +				default: `deployai,${modelName}`
@@ -1320,6 +1322,7 @@ index 00000000000..b4d1131e9fa
 +			config.Providers[0].api_base_url = baseUrl;
 +			config.Providers[0].api_key = apiKey;
 +			config.Providers[0].models = [modelName];
++			config.Providers[0].name = 'deployai';
 +
 +			config.Router = {
 +				default: `deployai,${modelName}`
@@ -1470,10 +1473,10 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..be29f2d8c16
+index 00000000000..39035140aea
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,1248 @@
+@@ -0,0 +1,1249 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -1613,6 +1616,7 @@ index 00000000000..be29f2d8c16
 +		this.fetchBannerData().then(() => {
 +			this.updateCarouselWithBannerData();
 +		});
++		this.hostService.restartClaudeCodeRouterCli();
 +		this.startBalanceCheck();
 +	}
 +
