@@ -1,3 +1,106 @@
+diff --git a/src/vs/code/electron-main/cliStopHandler.ts b/src/vs/code/electron-main/cliStopHandler.ts
+new file mode 100644
+index 00000000000..1702b4dc784
+--- /dev/null
++++ b/src/vs/code/electron-main/cliStopHandler.ts
+@@ -0,0 +1,82 @@
++/*---------------------------------------------------------------------------------------------
++ *  Copyright (c) Microsoft Corporation. All rights reserved.
++ *  Licensed under the MIT License. See License.txt in the project root for license information.
++ *--------------------------------------------------------------------------------------------*/
++
++import { exec } from 'child_process';
++import { promisify } from 'util';
++import { ILogService } from '../../platform/log/common/log.js';
++import { IEnvironmentMainService } from '../../platform/environment/electron-main/environmentMainService.js';
++import { join } from '../../base/common/path.js';
++
++const execAsync = promisify(exec);
++
++/**
++ * Handles stopping the CLI process on application shutdown
++ */
++export class CliStopHandler {
++
++	constructor(
++		@ILogService private readonly logService: ILogService,
++		@IEnvironmentMainService private readonly environmentMainService: IEnvironmentMainService
++	) { }
++
++	/**
++	 * Executes the CLI stop command
++	 */
++	async stopCli(): Promise<void> {
++		try {
++			// 获取CLI路径
++			const cliPath = this.getCliPath();
++
++			if (!cliPath) {
++				this.logService.warn('[CLI Stop] CLI path not found, skipping stop command');
++				return;
++			}
++
++			this.logService.info(`[CLI Stop] Executing stop command: "${cliPath}" stop`);
++
++			// 执行stop命令
++			const { stdout, stderr } = await execAsync(`"${cliPath}" stop`);
++
++			if (stdout) {
++				this.logService.info(`[CLI Stop] stdout: ${stdout}`);
++			}
++
++			if (stderr) {
++				this.logService.warn(`[CLI Stop] stderr: ${stderr}`);
++			}
++
++			this.logService.info('[CLI Stop] CLI stop command completed successfully');
++		} catch (error) {
++			this.logService.error(`[CLI Stop] Failed to execute CLI stop command: ${error}`);
++			// 不抛出错误，避免阻止应用退出
++		}
++	}
++
++	/**
++	 * 获取CLI可执行文件的路径
++	 */
++	private getCliPath(): string | undefined {
++		try {
++			// 根据你的实际情况调整CLI路径
++			// 这里假设CLI在应用的bin目录下
++			const resourcesPath = join(this.environmentMainService.appRoot, '..');
++
++			// 根据平台选择正确的CLI文件名
++			let cliFileName: string;
++			if (process.platform === 'win32') {
++				cliFileName = 'cli.exe'; // Windows
++			} else {
++				cliFileName = 'cli'; // macOS/Linux
++			}
++
++			const cliPath = join(resourcesPath, cliFileName);
++
++			return cliPath;
++		} catch (error) {
++			this.logService.error(`[CLI Stop] Error getting CLI path: ${error}`);
++			return undefined;
++		}
++	}
++}
+diff --git a/src/vs/code/electron-main/main.ts b/src/vs/code/electron-main/main.ts
+index fb06a689254..5b95642a971 100644
+--- a/src/vs/code/electron-main/main.ts
++++ b/src/vs/code/electron-main/main.ts
+@@ -75,2 +75,3 @@ import { addUNCHostToAllowlist, getUNCHost } from '../../base/node/unc.js';
+ import { ThemeMainService } from '../../platform/theme/electron-main/themeMainServiceImpl.js';
++import { CliStopHandler } from './cliStopHandler.js';
+ 
+@@ -143,2 +144,6 @@ class CodeMain {
+ 					evt.join('instanceLockfile', promises.unlink(environmentMainService.mainLockfile).catch(() => { /* ignored */ }));
++
++					// Stop CLI before shutdown
++					const cliStopHandler = instantiationService.createInstance(CliStopHandler);
++					evt.join('cliStop', cliStopHandler.stopCli());
+ 				});
 diff --git a/src/vs/platform/native/common/native.ts b/src/vs/platform/native/common/native.ts
 index 43729958372..745a9047341 100644
 --- a/src/vs/platform/native/common/native.ts
