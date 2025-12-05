@@ -531,7 +531,7 @@ index 00000000000..6a189466e71
 +);
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..63ed4657381
+index 00000000000..92dcc9e8373
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 @@ -0,0 +1,970 @@
@@ -1282,7 +1282,7 @@ index 00000000000..63ed4657381
 +			}
 +
 +			const controller = new AbortController();
-+			const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
++			const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 +
 +			// Send a minimal test request
 +			const response = await fetch(testUrl, {
