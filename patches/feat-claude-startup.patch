@@ -1225,7 +1225,7 @@ index 00000000000..907f0dbbe4a
 +		footer.style.cssText = `text-align: center; padding-top: 32px; border-top: 1px solid ${asCssVariable(contrastBorder)};`;
 +
 +		const text = DOM.append(footer, DOM.$('p'));
-+		text.textContent = 'DeployAI Studio v2.4.0 • Build 20240315';
++		text.textContent = 'Claude Code Desktop v2.4.0 • Build 20240315';
 +		text.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.5;`;
 +	}
 +

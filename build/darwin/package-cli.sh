@@ -9,7 +9,7 @@ if [[ ! -d "${BUILD_DIR}/VSCode-darwin-${ARCH}" ]]; then
   exit 1
 fi
 
-APP_DIR="${BUILD_DIR}/VSCode-darwin-${ARCH}/DeployAI Studio.app"
+APP_DIR="${BUILD_DIR}/VSCode-darwin-${ARCH}/Claude Code Desktop.app"
 MACOS_DIR="${APP_DIR}/Contents/MacOS"
 RESOURCES_DIR="${APP_DIR}/Contents/Resources"
 CLI_BIN="${BUILD_DIR}/ccr-bin/cli-macos-${ARCH}"
