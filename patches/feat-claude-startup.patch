@@ -531,7 +531,7 @@ index 00000000000..6a189466e71
 +);
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..907f0dbbe4a
+index 00000000000..8ab9be10e58
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 @@ -0,0 +1,1055 @@
@@ -1661,10 +1661,10 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..39035140aea
+index 00000000000..a92d8a28952
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,1249 @@
+@@ -0,0 +1,1267 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -2391,6 +2391,9 @@ index 00000000000..39035140aea
 +				}
 +				const params = new URLSearchParams(uri.query ?? '');
 +				const token = params.get('token');
++				// zh/en
++				const lang = params.get('lang');
++
 +				if (token) {
 +					this.storageService.store(
 +						TOKEN_STORAGE_KEY,
@@ -2405,8 +2408,23 @@ index 00000000000..39035140aea
 +					this.updateLoginStatus();
 +					this.hideSplash();
 +					this.startBalanceCheck();
-+					return true;
 +				}
++				// Handle language switching if lang parameter is present
++				if (lang && (lang === 'zh' || lang === 'en')) {
++					try {
++						const targetLocale = lang === 'zh' ? 'zh-cn' : 'en';
++						const languagePackItem = {
++							id: targetLocale,
++							label: targetLocale === 'zh-cn' ? '中文' : 'English',
++							galleryExtension: undefined,
++							extensionId: undefined
++						};
++						await this.localeService.setLocale(languagePackItem, false);
++					} catch (error) {
++						console.error('Error switching language from URL:', error);
++					}
++				}
++
 +				return false;
 +			},
 +		};
