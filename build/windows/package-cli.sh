@@ -222,6 +222,14 @@ function activate(context) {
     process.env.ANTHROPIC_AUTH_TOKEN = 'test';
     process.env.ANTHROPIC_API_KEY = 'test';
     process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+    // Get Git Bash path
+    const gitBashPath = getGitBashPath();
+    if (gitBashPath) {
+        process.env.CLAUDE_CODE_GIT_BASH_PATH = gitBashPath;
+        const gitBashBinDir = path.dirname(gitBashPath);
+        process.env.PATH = gitBashBinDir + path.delimiter + (process.env.PATH || '');
+    }
+
 
     // Start CLI service
     // startCLIService(context);
