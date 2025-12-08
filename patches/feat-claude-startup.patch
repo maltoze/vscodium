@@ -531,10 +531,10 @@ index 00000000000..6a189466e71
 +);
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..92dcc9e8373
+index 00000000000..907f0dbbe4a
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
-@@ -0,0 +1,970 @@
+@@ -0,0 +1,1055 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -556,6 +556,8 @@ index 00000000000..92dcc9e8373
 +import { INotificationService } from '../../../../platform/notification/common/notification.js';
 +import { IHostService } from '../../../services/host/browser/host.js';
 +import { MODELPROXY_API_ENDPOINT, SUB_KEY_STORAGE_KEY, CUSTOM_MODEL_NAME_KEY, CUSTOM_BASE_URL_KEY, CUSTOM_API_KEY_KEY, USE_CUSTOM_MODEL_KEY, SELECTED_MODEL_KEY } from '../../../common/deployai365.js';
++import { IWorkbenchThemeService, ThemeSettingDefaults } from '../../../services/themes/common/workbenchThemeService.js';
++import { ColorScheme } from '../../../../platform/theme/common/theme.js';
 +
 +interface ModelData {
 +	id: string;
@@ -598,6 +600,9 @@ index 00000000000..92dcc9e8373
 +	private customApiKeyInput: HTMLInputElement | undefined;
 +	private customSection: HTMLElement | undefined;
 +
++	private themeLightButton: HTMLElement | undefined;
++	private themeDarkButton: HTMLElement | undefined;
++
 +	constructor(
 +		group: IEditorGroup,
 +		@ITelemetryService telemetryService: ITelemetryService,
@@ -606,12 +611,18 @@ index 00000000000..92dcc9e8373
 +		@ILocaleService private readonly localeService: ILocaleService,
 +		@IHostService private readonly hostService: IHostService,
 +		@INotificationService private readonly notificationService: INotificationService,
++		@IWorkbenchThemeService private readonly workbenchThemeService: IWorkbenchThemeService,
 +	) {
 +		super(DeployAISettingsEditor.ID, group, telemetryService, themeService, storageService);
 +		this.initializeLanguage();
 +		this.loadUseCustomModel();
 +		this.loadSelectedModel();
 +		this.fetchModels();
++
++		// Listen to theme changes
++		this._register(this.workbenchThemeService.onDidColorThemeChange(() => {
++			this.updateThemeButtons();
++		}));
 +	}
 +
 +	private loadUseCustomModel(): void {
@@ -712,6 +723,42 @@ index 00000000000..92dcc9e8373
 +		const titleText = DOM.append(sectionTitle, DOM.$('span'));
 +		titleText.textContent = localize('deployai.settings.general', 'GENERAL');
 +
++		// Theme card
++		const themeCard = DOM.append(section, DOM.$('.settings-card'));
++		themeCard.style.cssText = `background: ${asCssVariable(inputBackground)}; border-radius: 6px; border: 1px solid ${asCssVariable(inputBorder)}; padding: 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;`;
++
++		const themeLabelContainer = DOM.append(themeCard, DOM.$('.label-container'));
++		const themeLabel = DOM.append(themeLabelContainer, DOM.$('label'));
++		themeLabel.textContent = localize('deployai.settings.theme', 'Theme');
++		themeLabel.style.cssText = `font-size: 14px; font-weight: 500; color: ${asCssVariable(editorForeground)}; display: block;`;
++
++		const themeLabelDesc = DOM.append(themeLabelContainer, DOM.$('p'));
++		themeLabelDesc.textContent = localize('deployai.settings.themeDesc', 'Select color theme');
++		themeLabelDesc.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.7; margin: 2px 0 0;`;
++
++		const themeToggle = DOM.append(themeCard, DOM.$('.theme-toggle'));
++		themeToggle.style.cssText = `background: ${asCssVariable(editorBackground)}; padding: 4px; border-radius: 6px; display: flex; font-size: 12px; font-weight: 500;`;
++
++		// Get current theme
++		const currentTheme = this.workbenchThemeService.getColorTheme();
++		const isDark = currentTheme.type === ColorScheme.DARK;
++
++		this.themeLightButton = DOM.append(themeToggle, DOM.$('button.theme-btn'));
++		this.themeLightButton.textContent = localize('deployai.settings.lightTheme', 'Light');
++		this.themeLightButton.style.cssText = !isDark
++			? `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: ${asCssVariable(listActiveSelectionBackground)}; cursor: pointer; color: ${asCssVariable(editorForeground)};`
++			: `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: transparent; cursor: pointer; color: ${asCssVariable(editorForeground)}; opacity: 0.7;`;
++
++		this.themeDarkButton = DOM.append(themeToggle, DOM.$('button.theme-btn'));
++		this.themeDarkButton.textContent = localize('deployai.settings.darkTheme', 'Dark');
++		this.themeDarkButton.style.cssText = isDark
++			? `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: ${asCssVariable(listActiveSelectionBackground)}; cursor: pointer; color: ${asCssVariable(editorForeground)};`
++			: `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: transparent; cursor: pointer; color: ${asCssVariable(editorForeground)}; opacity: 0.7;`;
++
++		this._register(DOM.addDisposableListener(this.themeLightButton, DOM.EventType.CLICK, () => this.setTheme('light')));
++		this._register(DOM.addDisposableListener(this.themeDarkButton, DOM.EventType.CLICK, () => this.setTheme('dark')));
++
++		// Language card
 +		const card = DOM.append(section, DOM.$('.settings-card'));
 +		card.style.cssText = `background: ${asCssVariable(inputBackground)}; border-radius: 6px; border: 1px solid ${asCssVariable(inputBorder)}; padding: 20px; display: flex; align-items: center; justify-content: space-between;`;
 +
@@ -1180,6 +1227,44 @@ index 00000000000..92dcc9e8373
 +		const text = DOM.append(footer, DOM.$('p'));
 +		text.textContent = 'DeployAI Studio v2.4.0 • Build 20240315';
 +		text.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.5;`;
++	}
++
++	private updateThemeButtons(): void {
++		if (!this.themeLightButton || !this.themeDarkButton) {
++			return;
++		}
++
++		const currentTheme = this.workbenchThemeService.getColorTheme();
++		const isDark = currentTheme.type === ColorScheme.DARK;
++
++		// Update light button
++		this.themeLightButton.style.cssText = !isDark
++			? `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: ${asCssVariable(listActiveSelectionBackground)}; cursor: pointer; color: ${asCssVariable(editorForeground)};`
++			: `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: transparent; cursor: pointer; color: ${asCssVariable(editorForeground)}; opacity: 0.7;`;
++
++		// Update dark button
++		this.themeDarkButton.style.cssText = isDark
++			? `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: ${asCssVariable(listActiveSelectionBackground)}; cursor: pointer; color: ${asCssVariable(editorForeground)};`
++			: `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: transparent; cursor: pointer; color: ${asCssVariable(editorForeground)}; opacity: 0.7;`;
++	}
++
++	private async setTheme(themeType: 'light' | 'dark'): Promise<void> {
++		try {
++			// Get all available themes
++			const themes = await this.workbenchThemeService.getColorThemes();
++
++			// Find the default theme based on type
++			const targetSettingsId = themeType === 'light' ? ThemeSettingDefaults.COLOR_THEME_LIGHT : ThemeSettingDefaults.COLOR_THEME_DARK;
++			const theme = themes.find(t => t.settingsId === targetSettingsId);
++
++			if (theme) {
++				await this.workbenchThemeService.setColorTheme(theme.id, 'auto');
++			} else {
++				console.warn(`Theme not found: ${targetSettingsId}`);
++			}
++		} catch (error) {
++			console.error('Error setting theme:', error);
++		}
 +	}
 +
 +	private async setLanguage(lang: string): Promise<void> {
