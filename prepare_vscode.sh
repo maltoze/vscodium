@@ -94,7 +94,7 @@ else
   setpath "product" "applicationName" "codium"
   setpath "product" "linuxIconName" "vscodium"
   setpath "product" "quality" "stable"
-  setpath "product" "urlProtocol" "vscodium"
+  setpath "product" "urlProtocol" "claude-code-desktop"
   setpath "product" "serverApplicationName" "codium-server"
   setpath "product" "serverDataFolderName" ".vscodium-server"
   setpath "product" "darwinBundleIdentifier" "com.vscodium"

@@ -464,7 +464,7 @@ index 00000000000..83c35fea10e
 +export const TOKEN_STORAGE_KEY = 'deployai365.auth.token';
 +export const SUB_KEY_STORAGE_KEY = 'deployai365.auth.subKey';
 +export const BALANCE_STORAGE_KEY = 'deployai365.auth.balance';
-+export const CALLBACK_SCHEME = 'vscodium';
++export const CALLBACK_SCHEME = 'claude-code-desktop';
 +export const CALLBACK_AUTHORITY = 'deployai365.auth';
 +export const CALLBACK_PATH = '/callback';
 +export const USER_INFO_API = `https://launch-api.deployai365.com/api/work-user/${INSTANCE_ID}`;
@@ -2425,7 +2425,7 @@ index 00000000000..a92d8a28952
 +					}
 +				}
 +
-+				return false;
++				return true;
 +			},
 +		};
 +		this._register(this.urlService.registerHandler(handler));
@@ -2443,7 +2443,7 @@ index 00000000000..a92d8a28952
 +				if (result.confirmed) {
 +					const subscriptionUrl = `https://deployai365.com/subscription-plans?serviceType=depcoder&instanceId=${INSTANCE_ID}&token=${encodeURIComponent(
 +						token
-+					)}&successUrl=${encodeURIComponent('vscodium://')}`;
++					)}&successUrl=${encodeURIComponent('claude-code-desktop://')}`;
 +					this.openerService.open(URI.parse(subscriptionUrl), {
 +						openExternal: true,
 +					});
