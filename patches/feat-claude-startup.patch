@@ -447,10 +447,10 @@ index f8e5e74bf6b..91bf15751f6 100644
 +});
 diff --git a/src/vs/workbench/common/deployai365.ts b/src/vs/workbench/common/deployai365.ts
 new file mode 100644
-index 00000000000..83c35fea10e
+index 00000000000..a16a50800f7
 --- /dev/null
 +++ b/src/vs/workbench/common/deployai365.ts
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,27 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -464,7 +464,7 @@ index 00000000000..83c35fea10e
 +export const TOKEN_STORAGE_KEY = 'deployai365.auth.token';
 +export const SUB_KEY_STORAGE_KEY = 'deployai365.auth.subKey';
 +export const BALANCE_STORAGE_KEY = 'deployai365.auth.balance';
-+export const CALLBACK_SCHEME = 'claude-code-desktop';
++export const CALLBACK_SCHEME = 'deployai-studio';
 +export const CALLBACK_AUTHORITY = 'deployai365.auth';
 +export const CALLBACK_PATH = '/callback';
 +export const USER_INFO_API = `https://launch-api.deployai365.com/api/work-user/${INSTANCE_ID}`;
@@ -477,6 +477,7 @@ index 00000000000..83c35fea10e
 +export const CUSTOM_API_KEY_KEY = 'deployai.customEndpoint.apiKey';
 +export const USE_CUSTOM_MODEL_KEY = 'deployai.useCustomModel';
 +export const SELECTED_MODEL_KEY = 'deployai.selectedModel';
++export const ENABLE_CUSTOM_MODEL_KEY = 'deployai.enableCustomModel';
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts
 new file mode 100644
 index 00000000000..6a189466e71
@@ -531,10 +532,10 @@ index 00000000000..6a189466e71
 +);
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..8ab9be10e58
+index 00000000000..214ae408148
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
-@@ -0,0 +1,1055 @@
+@@ -0,0 +1,1073 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -555,7 +556,7 @@ index 00000000000..8ab9be10e58
 +import { Language } from '../../../../base/common/platform.js';
 +import { INotificationService } from '../../../../platform/notification/common/notification.js';
 +import { IHostService } from '../../../services/host/browser/host.js';
-+import { MODELPROXY_API_ENDPOINT, SUB_KEY_STORAGE_KEY, CUSTOM_MODEL_NAME_KEY, CUSTOM_BASE_URL_KEY, CUSTOM_API_KEY_KEY, USE_CUSTOM_MODEL_KEY, SELECTED_MODEL_KEY } from '../../../common/deployai365.js';
++import { MODELPROXY_API_ENDPOINT, SUB_KEY_STORAGE_KEY, CUSTOM_MODEL_NAME_KEY, CUSTOM_BASE_URL_KEY, CUSTOM_API_KEY_KEY, USE_CUSTOM_MODEL_KEY, SELECTED_MODEL_KEY, ENABLE_CUSTOM_MODEL_KEY } from '../../../common/deployai365.js';
 +import { IWorkbenchThemeService, ThemeSettingDefaults } from '../../../services/themes/common/workbenchThemeService.js';
 +import { ColorScheme } from '../../../../platform/theme/common/theme.js';
 +
@@ -582,6 +583,7 @@ index 00000000000..8ab9be10e58
 +	private currentLanguage: string = 'zh';
 +	private selectedModel: string = 'anthropic/claude-sonnet-4.5';
 +	private useCustomModel: boolean = false;
++	private enableCustomModel: boolean = true;
 +	private isDropdownOpen: boolean = false;
 +	private isCustomOpen: boolean = false;
 +	private searchTerm: string = '';
@@ -615,6 +617,7 @@ index 00000000000..8ab9be10e58
 +	) {
 +		super(DeployAISettingsEditor.ID, group, telemetryService, themeService, storageService);
 +		this.initializeLanguage();
++		this.loadEnableCustomModel();
 +		this.loadUseCustomModel();
 +		this.loadSelectedModel();
 +		this.fetchModels();
@@ -623,6 +626,22 @@ index 00000000000..8ab9be10e58
 +		this._register(this.workbenchThemeService.onDidColorThemeChange(() => {
 +			this.updateThemeButtons();
 +		}));
++
++		// Listen to storage changes for enable_custom_model
++		this._register(this.storageService.onDidChangeValue(StorageScope.APPLICATION, ENABLE_CUSTOM_MODEL_KEY, this._store)((e) => {
++			this.loadEnableCustomModel();
++			// Re-render model options if dropdown is open
++			if (this.isDropdownOpen && this.modelOptionsContainer) {
++				this.renderModelOptions();
++			}
++		}));
++	}
++
++	private loadEnableCustomModel(): void {
++		const saved = this.storageService.get(ENABLE_CUSTOM_MODEL_KEY, StorageScope.APPLICATION);
++		// If saved value exists, use it; otherwise default to true
++		this.enableCustomModel = saved !== undefined ? saved === 'true' : true;
++		console.log('loadEnableCustomModel:', saved, 'enableCustomModel:', this.enableCustomModel);
 +	}
 +
 +	private loadUseCustomModel(): void {
@@ -986,8 +1005,8 @@ index 00000000000..8ab9be10e58
 +
 +		DOM.clearNode(this.modelOptionsContainer);
 +
-+		// Add "Use Custom Model" option at the top (only when not searching)
-+		if (!this.searchTerm) {
++		// Add "Use Custom Model" option at the top (only when not searching and enabled)
++		if (!this.searchTerm && this.enableCustomModel) {
 +			const customOption = DOM.append(this.modelOptionsContainer, DOM.$('button.dropdown-option'));
 +			customOption.style.cssText = `width: 100%; text-align: left; padding: 12px 16px; background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background 0.2s; color: ${asCssVariable(editorForeground)}; border-bottom: 1px solid ${asCssVariable(inputBorder)};`;
 +
@@ -1661,10 +1680,10 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..a92d8a28952
+index 00000000000..7b514c1ece9
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,1267 @@
+@@ -0,0 +1,1291 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -1697,7 +1716,7 @@ index 00000000000..a92d8a28952
 +import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 +import { IHostService } from '../../../services/host/browser/host.js';
 +import { IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
-+import { INSTANCE_ID, TOKEN_STORAGE_KEY, SUB_KEY_STORAGE_KEY, BALANCE_STORAGE_KEY, CALLBACK_SCHEME, CALLBACK_AUTHORITY, CALLBACK_PATH, USER_INFO_API, API_ENDPOINT, USE_CUSTOM_MODEL_KEY } from '../../../common/deployai365.js';
++import { INSTANCE_ID, TOKEN_STORAGE_KEY, SUB_KEY_STORAGE_KEY, BALANCE_STORAGE_KEY, CALLBACK_SCHEME, CALLBACK_AUTHORITY, CALLBACK_PATH, USER_INFO_API, API_ENDPOINT, USE_CUSTOM_MODEL_KEY, ENABLE_CUSTOM_MODEL_KEY } from '../../../common/deployai365.js';
 +import { ILocaleService } from '../../../services/localization/common/locale.js';
 +import { localize2 } from '../../../../nls.js';
 +
@@ -2335,6 +2354,19 @@ index 00000000000..a92d8a28952
 +					const data = await response.json();
 +					this.userName = data?.data?.user_name;
 +					this.totalAmount = data?.data?.total_amount;
++					const enableCustomModel = data?.data?.enable_custom_model;
++
++					console.log('Fetched user info:', JSON.stringify(data), typeof enableCustomModel === 'boolean');
++
++					// Save enable_custom_model to storage
++					if (typeof enableCustomModel === 'boolean') {
++						this.storageService.store(
++							ENABLE_CUSTOM_MODEL_KEY,
++							String(enableCustomModel),
++							StorageScope.APPLICATION,
++							StorageTarget.MACHINE
++						);
++					}
 +
 +					if (this.userName && statusText) {
 +						statusText.textContent = this.userName;
@@ -2432,6 +2464,7 @@ index 00000000000..a92d8a28952
 +	}
 +
 +	private showInsufficientBalanceDialog(token: string): void {
++		const successUrl = encodeURIComponent(`${CALLBACK_SCHEME}://`);
 +		this.dialogService
 +			.confirm({
 +				message: localize2('insufficientBalance', 'Insufficient balance, please recharge').value,
@@ -2443,7 +2476,7 @@ index 00000000000..a92d8a28952
 +				if (result.confirmed) {
 +					const subscriptionUrl = `https://deployai365.com/subscription-plans?serviceType=depcoder&instanceId=${INSTANCE_ID}&token=${encodeURIComponent(
 +						token
-+					)}&successUrl=${encodeURIComponent('claude-code-desktop://')}`;
++					)}&successUrl=${successUrl}`;
 +					this.openerService.open(URI.parse(subscriptionUrl), {
 +						openExternal: true,
 +					});
@@ -2897,6 +2930,7 @@ index 00000000000..a92d8a28952
 +			if (response.ok) {
 +				const data = await response.json();
 +				const newAmount = data?.data?.total_amount;
++				const enableCustomModel = data?.data?.enable_custom_model;
 +				this.totalAmount = newAmount;
 +				// Store balance in storage for other components to access
 +				this.storageService.store(
@@ -2905,6 +2939,15 @@ index 00000000000..a92d8a28952
 +					StorageScope.APPLICATION,
 +					StorageTarget.MACHINE
 +				);
++				// Save enable_custom_model to storage
++				if (typeof enableCustomModel === 'boolean') {
++					this.storageService.store(
++						ENABLE_CUSTOM_MODEL_KEY,
++						String(enableCustomModel),
++						StorageScope.APPLICATION,
++						StorageTarget.MACHINE
++					);
++				}
 +				// Update context key
 +				if (typeof this.totalAmount === 'number') {
 +					this.isLowBalanceContextKey.set(this.totalAmount <= 0.05);
