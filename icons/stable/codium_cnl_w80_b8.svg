@@ -1,21 +1,14 @@
 <svg width="100" height="100" viewBox="0 0 100 100"
      xmlns="http://www.w3.org/2000/svg">
-  <!-- Rounded background using #D97757 -->
-  <rect width="100" height="100" rx="20" fill="#D97757"/>
-
-  <!-- Inner terminal window outline (white) -->
-  <rect x="14" y="20" width="72" height="56" rx="10"
-        fill="none" stroke="#FFFFFF" stroke-width="3"/>
-
-  <!-- Terminal title bar line (white, subtle) -->
-  <line x1="14" y1="32" x2="86" y2="32" stroke="#FFFFFF" stroke-width="2"/>
-
-  <!-- Command prompt icon: >_ style, in white -->
-  <text x="28" y="60"
-        font-size="20"
-        font-family="JetBrains Mono, Menlo, Consolas, monospace"
+  <!-- Rounded green background -->
+  <rect width="100" height="100" rx="20" fill="#00D86F"/>
+  <!-- White D -->
+  <text x="50" y="68"
+        font-size="60"
+        font-family="Arial, Helvetica, sans-serif"
         fill="#FFFFFF"
-        font-weight="600">
-    &gt; _
+        text-anchor="middle"
+        font-weight="700">
+    D
   </text>
 </svg>

@@ -89,21 +89,21 @@ if [[ "${VSCODE_QUALITY}" == "insider" ]]; then
   setpath "product" "win32ContextMenu.x64.clsid" "90AAD229-85FD-43A3-B82D-8598A88829CF"
   setpath "product" "win32ContextMenu.arm64.clsid" "7544C31C-BDBF-4DDF-B15E-F73A46D6723D"
 else
-  setpath "product" "nameShort" "Claude Code Desktop"
-  setpath "product" "nameLong" "Claude Code Desktop"
+  setpath "product" "nameShort" "DeployAI Studio"
+  setpath "product" "nameLong" "DeployAI Studio"
   setpath "product" "applicationName" "codium"
   setpath "product" "linuxIconName" "vscodium"
   setpath "product" "quality" "stable"
-  setpath "product" "urlProtocol" "claude-code-desktop"
+  setpath "product" "urlProtocol" "vscodium"
   setpath "product" "serverApplicationName" "codium-server"
   setpath "product" "serverDataFolderName" ".vscodium-server"
   setpath "product" "darwinBundleIdentifier" "com.vscodium"
   setpath "product" "win32AppUserModelId" "VSCodium.VSCodium"
-  setpath "product" "win32DirName" "Claude Code Desktop"
-  setpath "product" "win32MutexName" "Claude Code Desktop"
-  setpath "product" "win32NameVersion" "Claude Code Desktop"
-  setpath "product" "win32RegValueName" "Claude Code Desktop"
-  setpath "product" "win32ShellNameShort" "Claude Code Desktop"
+  setpath "product" "win32DirName" "DeployAI Studio"
+  setpath "product" "win32MutexName" "DeployAI Studio"
+  setpath "product" "win32NameVersion" "DeployAI Studio"
+  setpath "product" "win32RegValueName" "DeployAI Studio"
+  setpath "product" "win32ShellNameShort" "DeployAI Studio"
   setpath "product" "win32AppId" "{{91DE5609-2B58-42F9-BEA7-738D6548F304}"
   setpath "product" "win32x64AppId" "{{1B7E5303-D390-4FB9-BC15-E66F7906A549}"
   setpath "product" "win32arm64AppId" "{{9D8A1582-C69F-4B7A-B323-777AD3BC0AE1}"
@@ -236,8 +236,8 @@ replace "s|\\[\\/\\* BUILTIN_ANNOUNCEMENTS \\*\\/\\]|$( tr -d '\n' < ../announce
 
 ../undo_telemetry.sh
 
-replace 's|Microsoft Corporation|Claude Code Desktop|' build/lib/electron.js
-replace 's|Microsoft Corporation|Claude Code Desktop|' build/lib/electron.ts
+replace 's|Microsoft Corporation|DeployAI Studio|' build/lib/electron.js
+replace 's|Microsoft Corporation|DeployAI Studio|' build/lib/electron.ts
 replace 's|([0-9]) Microsoft|\1 DeployAI|' build/lib/electron.js
 replace 's|([0-9]) Microsoft|\1 DeployAI|' build/lib/electron.ts
 
