@@ -17,7 +17,7 @@ if [[ "${VSCODE_QUALITY}" == "insider" ]]; then
   SETUP_RESOURCES_DIR=".\\resources\\insider"
 else
   PRODUCT_NAME="Claude Code Desktop"
-  PRODUCT_CODE="DeployAIStudio"
+  PRODUCT_CODE="ClaudeCodeDesktop"
   PRODUCT_UPGRADE_CODE="965370CD-253C-4720-82FC-2E6B02A53808"
   ICON_DIR="..\\..\\..\\src\\stable\\resources\\win32"
   SETUP_RESOURCES_DIR=".\\resources\\stable"
