@@ -447,7 +447,7 @@ index f8e5e74bf6b..91bf15751f6 100644
 +});
 diff --git a/src/vs/workbench/common/deployai365.ts b/src/vs/workbench/common/deployai365.ts
 new file mode 100644
-index 00000000000..a16a50800f7
+index 00000000000..2cba0533c61
 --- /dev/null
 +++ b/src/vs/workbench/common/deployai365.ts
 @@ -0,0 +1,27 @@
@@ -1680,10 +1680,10 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..7b514c1ece9
+index 00000000000..1e7015869c2
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,1291 @@
+@@ -0,0 +1,1317 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -1817,6 +1817,24 @@ index 00000000000..7b514c1ece9
 +	private async init(): Promise<void> {
 +		this.initializeLanguage();
 +		this.registerUrlHandler();
++
++		// Check if user is logged in and has sufficient balance
++		const token = this.storageService.get(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
++		if (token) {
++			// Fetch user info first
++			const userInfo = await this.fetchUserInfo(token);
++
++			// If user has sufficient balance (> 0), skip splash screen
++			if (userInfo && typeof userInfo.totalAmount === 'number' && userInfo.totalAmount > 0) {
++				this.userName = userInfo.userName;
++				this.totalAmount = userInfo.totalAmount;
++				await this.fetchAndSaveSubKey(token);
++				this.hostService.restartClaudeCodeRouterCli();
++				this.startBalanceCheck();
++				return;
++			}
++		}
++
 +		// Show splash immediately, then load banner data
 +		this.showSplash();
 +		// Fetch banner data asynchronously and update carousel
@@ -1831,6 +1849,44 @@ index 00000000000..7b514c1ece9
 +		// Get current language from VSCode
 +		const currentLocale = Language.value() || 'en';
 +		this.currentLanguage = currentLocale.startsWith('zh') ? 'zh' : 'en';
++	}
++
++	private async fetchUserInfo(token: string): Promise<{ userName?: string; totalAmount?: number; enableCustomModel?: boolean } | null> {
++		try {
++			const response = await fetch(USER_INFO_API, {
++				headers: {
++					Authorization: `Bearer ${token}`,
++				},
++			});
++
++			if (response.status === 401) {
++				// Token invalid, remove it
++				this.storageService.remove(TOKEN_STORAGE_KEY, StorageScope.APPLICATION);
++				return null;
++			}
++
++			if (response.ok) {
++				const data = await response.json();
++				const userName = data?.data?.user_name;
++				const totalAmount = data?.data?.total_amount;
++				const enableCustomModel = data?.data?.enable_custom_model;
++
++				// Save enable_custom_model to storage
++				if (typeof enableCustomModel === 'boolean') {
++					this.storageService.store(
++						ENABLE_CUSTOM_MODEL_KEY,
++						String(enableCustomModel),
++						StorageScope.APPLICATION,
++						StorageTarget.MACHINE
++					);
++				}
++
++				return { userName, totalAmount, enableCustomModel };
++			}
++		} catch (error) {
++			console.error('Error fetching user info:', error);
++		}
++		return null;
 +	}
 +
 +	private async fetchBannerData(): Promise<void> {
@@ -2319,21 +2375,12 @@ index 00000000000..7b514c1ece9
 +
 +			await this.fetchAndSaveSubKey(token);
 +
-+			// Fetch user info
-+			try {
-+				const response = await fetch(USER_INFO_API, {
-+					headers: {
-+						Authorization: `Bearer ${token}`,
-+					},
-+				});
++			// Only fetch user info if we don't have it yet
++			if (!this.userName && !this.totalAmount) {
++				const userInfo = await this.fetchUserInfo(token);
 +
-+				if (response.status === 401) {
-+					// Token invalid, remove it
-+					this.storageService.remove(
-+						TOKEN_STORAGE_KEY,
-+						StorageScope.APPLICATION
-+					);
-+					// Only open login page if allowed
++				if (!userInfo) {
++					// Token was invalid and removed, open login page if allowed
 +					if (allowOpenExternal) {
 +						const callback = URI.from({
 +							scheme: CALLBACK_SCHEME,
@@ -2350,37 +2397,16 @@ index 00000000000..7b514c1ece9
 +					return;
 +				}
 +
-+				if (response.ok) {
-+					const data = await response.json();
-+					this.userName = data?.data?.user_name;
-+					this.totalAmount = data?.data?.total_amount;
-+					const enableCustomModel = data?.data?.enable_custom_model;
++				// Update local state
++				this.userName = userInfo.userName;
++				this.totalAmount = userInfo.totalAmount;
++			}
 +
-+					console.log('Fetched user info:', JSON.stringify(data), typeof enableCustomModel === 'boolean');
-+
-+					// Save enable_custom_model to storage
-+					if (typeof enableCustomModel === 'boolean') {
-+						this.storageService.store(
-+							ENABLE_CUSTOM_MODEL_KEY,
-+							String(enableCustomModel),
-+							StorageScope.APPLICATION,
-+							StorageTarget.MACHINE
-+						);
-+					}
-+
-+					if (this.userName && statusText) {
-+						statusText.textContent = this.userName;
-+					} else if (statusText) {
-+						statusText.textContent = localize2('loggedIn', 'Logged in').value;
-+					}
-+				} else if (statusText) {
-+					statusText.textContent = localize2('loggedIn', 'Logged in').value;
-+				}
-+			} catch (error) {
-+				console.error('Error fetching user info:', error);
-+				if (statusText) {
-+					statusText.textContent = localize2('loggedIn', 'Logged in').value;
-+				}
++			// Update UI with existing data
++			if (this.userName && statusText) {
++				statusText.textContent = this.userName;
++			} else if (statusText) {
++				statusText.textContent = localize2('loggedIn', 'Logged in').value;
 +			}
 +
 +			// Remove loading state after fetch completes
