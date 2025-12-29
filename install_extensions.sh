@@ -168,7 +168,14 @@ inject_chinese_translations() {
   "deployai.settings.connectionFailed": "连接失败",
   "deployai.settings.connectionTimeout": "连接超时，请检查URL是否正确",
   "deployai.settings.connectionFailedWithError": "连接失败: {0}",
-  "deployai.settings.useCustomModel": "使用自定义模型"
+  "deployai.settings.useCustomModel": "使用自定义模型",
+  "deployai.settings.claudeLogin": "Claude 登录",
+  "deployai.settings.claudeLoginDesc": "使用 Claude 账号登录，禁用本地环境变量覆盖",
+  "deployai.settings.claudeLoginEnable": "Claude 登录",
+  "deployai.settings.claudeLoginDisable": "本地环境",
+  "deployai.settings.useClaudeAccountLogin": "使用 Claude 账号登录而非本地环境变量覆盖",
+  "deployai.settings.reloadToApply": "需重载窗口以应用 Claude 登录设置。",
+  "deployai.settings.reload": "重载窗口"
 }
 EOF
 
@@ -239,7 +246,14 @@ try:
         "deployai.settings.connectionFailed": "连接失败",
         "deployai.settings.connectionTimeout": "连接超时，请检查URL是否正确",
         "deployai.settings.connectionFailedWithError": "连接失败: {0}",
-        "deployai.settings.useCustomModel": "使用自定义模型"
+        "deployai.settings.useCustomModel": "使用自定义模型",
+        "deployai.settings.claudeLogin": "Claude 登录",
+        "deployai.settings.claudeLoginDesc": "使用 Claude 账号登录，禁用本地环境变量覆盖",
+        "deployai.settings.claudeLoginEnable": "Claude 登录",
+        "deployai.settings.claudeLoginDisable": "本地环境",
+        "deployai.settings.useClaudeAccountLogin": "使用 Claude 账号登录而非本地环境变量覆盖",
+        "deployai.settings.reloadToApply": "需重载窗口以应用 Claude 登录设置。",
+        "deployai.settings.reload": "重载窗口"
     }
 
     # Inject into titlebar actions
