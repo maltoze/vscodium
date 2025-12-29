@@ -447,7 +447,7 @@ index f8e5e74bf6b..91bf15751f6 100644
 +});
 diff --git a/src/vs/workbench/common/deployai365.ts b/src/vs/workbench/common/deployai365.ts
 new file mode 100644
-index 00000000000..e99e21ba55a
+index 00000000000..650260f8d06
 --- /dev/null
 +++ b/src/vs/workbench/common/deployai365.ts
 @@ -0,0 +1,28 @@
@@ -548,7 +548,7 @@ index 00000000000..6adbf74df00
 +});
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..ad02dac3afe
+index 00000000000..f08996ed5ca
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 @@ -0,0 +1,1154 @@
@@ -1307,9 +1307,9 @@ index 00000000000..ad02dac3afe
 +		const footer = DOM.append(parent, DOM.$('.settings-footer'));
 +		footer.style.cssText = `text-align: center; padding-top: 32px; border-top: 1px solid ${asCssVariable(contrastBorder)};`;
 +
-+		const text = DOM.append(footer, DOM.$('p'));
-+		text.textContent = 'DeployAI Studio v2.4.0 • Build 20240315';
-+		text.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.5;`;
++		// const text = DOM.append(footer, DOM.$('p'));
++		// text.textContent = 'DeployAI Studio v2.4.0 • Build 20240315';
++		// text.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.5;`;
 +	}
 +
 +	private updateThemeButtons(): void {
