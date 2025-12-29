@@ -447,10 +447,10 @@ index f8e5e74bf6b..91bf15751f6 100644
 +});
 diff --git a/src/vs/workbench/common/deployai365.ts b/src/vs/workbench/common/deployai365.ts
 new file mode 100644
-index 00000000000..2cba0533c61
+index 00000000000..e99e21ba55a
 --- /dev/null
 +++ b/src/vs/workbench/common/deployai365.ts
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,28 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -478,18 +478,20 @@ index 00000000000..2cba0533c61
 +export const USE_CUSTOM_MODEL_KEY = 'deployai.useCustomModel';
 +export const SELECTED_MODEL_KEY = 'deployai.selectedModel';
 +export const ENABLE_CUSTOM_MODEL_KEY = 'deployai.enableCustomModel';
++export const USE_CLAUDE_ACCOUNT_LOGIN_KEY = 'deployai.useClaudeAccountLogin';
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts
 new file mode 100644
-index 00000000000..6a189466e71
+index 00000000000..6adbf74df00
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,61 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
 + *--------------------------------------------------------------------------------------------*/
 +
 +import { localize } from '../../../../nls.js';
++import { Extensions as ConfigurationExtensions, IConfigurationRegistry, ConfigurationScope } from '../../../../platform/configuration/common/configurationRegistry.js';
 +import { Registry } from '../../../../platform/registry/common/platform.js';
 +import { EditorExtensions, IEditorFactoryRegistry } from '../../../common/editor.js';
 +import { EditorPaneDescriptor, IEditorPaneRegistry } from '../../../browser/editor.js';
@@ -498,6 +500,7 @@ index 00000000000..6a189466e71
 +import { DeployAISettingsInput } from './deployaiSettingsInput.js';
 +import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 +import { IEditorSerializer } from '../../../common/editor.js';
++import { USE_CLAUDE_ACCOUNT_LOGIN_KEY } from '../../../common/deployai365.js';
 +
 +// Register Editor Pane
 +Registry.as<IEditorPaneRegistry>(EditorExtensions.EditorPane).registerEditorPane(
@@ -530,12 +533,25 @@ index 00000000000..6a189466e71
 +	DeployAISettingsInput.ID,
 +	DeployAISettingsInputSerializer
 +);
++
++Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).registerConfiguration({
++	id: 'deployai',
++	title: localize('deployaiSettings', 'DeployAI'),
++	properties: {
++		[USE_CLAUDE_ACCOUNT_LOGIN_KEY]: {
++			type: 'boolean',
++			default: false,
++			scope: ConfigurationScope.APPLICATION,
++			description: localize('deployai.settings.useClaudeAccountLogin', 'Use Claude account login instead of local env overrides.')
++		}
++	}
++});
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..214ae408148
+index 00000000000..ad02dac3afe
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
-@@ -0,0 +1,1073 @@
+@@ -0,0 +1,1154 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -554,11 +570,12 @@ index 00000000000..214ae408148
 +import { asCssVariable, editorBackground, editorForeground, inputBackground, inputBorder, inputForeground, focusBorder, buttonBackground, buttonForeground, buttonHoverBackground, contrastBorder, widgetShadow, listHoverBackground, listActiveSelectionBackground } from '../../../../platform/theme/common/colorRegistry.js';
 +import { ILocaleService } from '../../../services/localization/common/locale.js';
 +import { Language } from '../../../../base/common/platform.js';
-+import { INotificationService } from '../../../../platform/notification/common/notification.js';
++import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
 +import { IHostService } from '../../../services/host/browser/host.js';
-+import { MODELPROXY_API_ENDPOINT, SUB_KEY_STORAGE_KEY, CUSTOM_MODEL_NAME_KEY, CUSTOM_BASE_URL_KEY, CUSTOM_API_KEY_KEY, USE_CUSTOM_MODEL_KEY, SELECTED_MODEL_KEY, ENABLE_CUSTOM_MODEL_KEY } from '../../../common/deployai365.js';
++import { MODELPROXY_API_ENDPOINT, SUB_KEY_STORAGE_KEY, CUSTOM_MODEL_NAME_KEY, CUSTOM_BASE_URL_KEY, CUSTOM_API_KEY_KEY, USE_CUSTOM_MODEL_KEY, SELECTED_MODEL_KEY, ENABLE_CUSTOM_MODEL_KEY, USE_CLAUDE_ACCOUNT_LOGIN_KEY } from '../../../common/deployai365.js';
 +import { IWorkbenchThemeService, ThemeSettingDefaults } from '../../../services/themes/common/workbenchThemeService.js';
 +import { ColorScheme } from '../../../../platform/theme/common/theme.js';
++import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 +
 +interface ModelData {
 +	id: string;
@@ -584,6 +601,7 @@ index 00000000000..214ae408148
 +	private selectedModel: string = 'anthropic/claude-sonnet-4.5';
 +	private useCustomModel: boolean = false;
 +	private enableCustomModel: boolean = true;
++	private useClaudeAccountLogin: boolean = false;
 +	private isDropdownOpen: boolean = false;
 +	private isCustomOpen: boolean = false;
 +	private searchTerm: string = '';
@@ -604,6 +622,8 @@ index 00000000000..214ae408148
 +
 +	private themeLightButton: HTMLElement | undefined;
 +	private themeDarkButton: HTMLElement | undefined;
++	private claudeLoginButton: HTMLElement | undefined;
++	private localEnvButton: HTMLElement | undefined;
 +
 +	constructor(
 +		group: IEditorGroup,
@@ -614,12 +634,14 @@ index 00000000000..214ae408148
 +		@IHostService private readonly hostService: IHostService,
 +		@INotificationService private readonly notificationService: INotificationService,
 +		@IWorkbenchThemeService private readonly workbenchThemeService: IWorkbenchThemeService,
++		@IConfigurationService private readonly configurationService: IConfigurationService,
 +	) {
 +		super(DeployAISettingsEditor.ID, group, telemetryService, themeService, storageService);
 +		this.initializeLanguage();
 +		this.loadEnableCustomModel();
 +		this.loadUseCustomModel();
 +		this.loadSelectedModel();
++		this.loadUseClaudeAccountLogin();
 +		this.fetchModels();
 +
 +		// Listen to theme changes
@@ -633,6 +655,13 @@ index 00000000000..214ae408148
 +			// Re-render model options if dropdown is open
 +			if (this.isDropdownOpen && this.modelOptionsContainer) {
 +				this.renderModelOptions();
++			}
++		}));
++
++		this._register(this.configurationService.onDidChangeConfiguration((e) => {
++			if (e.affectsConfiguration(USE_CLAUDE_ACCOUNT_LOGIN_KEY)) {
++				this.loadUseClaudeAccountLogin();
++				this.updateClaudeLoginButtons();
 +			}
 +		}));
 +	}
@@ -654,6 +683,10 @@ index 00000000000..214ae408148
 +		if (saved) {
 +			this.selectedModel = saved;
 +		}
++	}
++
++	private loadUseClaudeAccountLogin(): void {
++		this.useClaudeAccountLogin = !!this.configurationService.getValue(USE_CLAUDE_ACCOUNT_LOGIN_KEY);
 +	}
 +
 +	private initializeLanguage(): void {
@@ -811,6 +844,37 @@ index 00000000000..214ae408148
 +
 +		this._register(DOM.addDisposableListener(btnEn, DOM.EventType.CLICK, () => this.setLanguage('en')));
 +		this._register(DOM.addDisposableListener(btnZh, DOM.EventType.CLICK, () => this.setLanguage('zh')));
++
++		// Claude login card
++		const loginCard = DOM.append(section, DOM.$('.settings-card'));
++		loginCard.style.cssText = `background: ${asCssVariable(inputBackground)}; border-radius: 6px; border: 1px solid ${asCssVariable(inputBorder)}; padding: 20px; display: flex; align-items: center; justify-content: space-between; margin-top: 12px;`;
++
++		const loginLabelContainer = DOM.append(loginCard, DOM.$('.label-container'));
++		const loginLabel = DOM.append(loginLabelContainer, DOM.$('label'));
++		loginLabel.textContent = localize('deployai.settings.claudeLogin', 'Claude Login');
++		loginLabel.style.cssText = `font-size: 14px; font-weight: 500; color: ${asCssVariable(editorForeground)}; display: block;`;
++
++		const loginDesc = DOM.append(loginLabelContainer, DOM.$('p'));
++		loginDesc.textContent = localize('deployai.settings.claudeLoginDesc', 'Use Claude account login instead of local env overrides');
++		loginDesc.style.cssText = `font-size: 12px; color: ${asCssVariable(editorForeground)}; opacity: 0.7; margin: 2px 0 0;`;
++
++		const loginToggle = DOM.append(loginCard, DOM.$('.login-toggle'));
++		loginToggle.style.cssText = `background: ${asCssVariable(editorBackground)}; padding: 4px; border-radius: 6px; display: flex; font-size: 12px; font-weight: 500;`;
++
++		this.claudeLoginButton = DOM.append(loginToggle, DOM.$('button.login-btn'));
++		this.claudeLoginButton.textContent = localize('deployai.settings.claudeLoginEnable', 'Claude Login');
++
++		this.localEnvButton = DOM.append(loginToggle, DOM.$('button.login-btn'));
++		this.localEnvButton.textContent = localize('deployai.settings.claudeLoginDisable', 'Local Env');
++
++		this.updateClaudeLoginButtons();
++
++		this._register(DOM.addDisposableListener(this.claudeLoginButton, DOM.EventType.CLICK, () => {
++			this.setClaudeLoginMode(true);
++		}));
++		this._register(DOM.addDisposableListener(this.localEnvButton, DOM.EventType.CLICK, () => {
++			this.setClaudeLoginMode(false);
++		}));
 +	}
 +
 +	private renderModelSection(parent: HTMLElement): void {
@@ -1303,6 +1367,39 @@ index 00000000000..214ae408148
 +		} catch (error) {
 +			console.error('Error toggling language:', error);
 +		}
++	}
++
++	private updateClaudeLoginButtons(): void {
++		if (!this.claudeLoginButton || !this.localEnvButton) {
++			return;
++		}
++
++		this.claudeLoginButton.style.cssText = this.useClaudeAccountLogin
++			? `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: ${asCssVariable(listActiveSelectionBackground)}; cursor: pointer; color: ${asCssVariable(editorForeground)};`
++			: `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: transparent; cursor: pointer; color: ${asCssVariable(editorForeground)}; opacity: 0.7;`;
++
++		this.localEnvButton.style.cssText = !this.useClaudeAccountLogin
++			? `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: ${asCssVariable(listActiveSelectionBackground)}; cursor: pointer; color: ${asCssVariable(editorForeground)};`
++			: `padding: 6px 16px; border-radius: 4px; transition: all 0.2s; border: none; background: transparent; cursor: pointer; color: ${asCssVariable(editorForeground)}; opacity: 0.7;`;
++	}
++
++	private async setClaudeLoginMode(useClaudeLogin: boolean): Promise<void> {
++		if (this.useClaudeAccountLogin === useClaudeLogin) {
++			return;
++		}
++
++		this.useClaudeAccountLogin = useClaudeLogin;
++		await this.configurationService.updateValue(USE_CLAUDE_ACCOUNT_LOGIN_KEY, useClaudeLogin);
++		this.updateClaudeLoginButtons();
++		this.notificationService.prompt(
++			Severity.Info,
++			localize('deployai.settings.reloadToApply', 'Reload window to apply Claude login setting.'),
++			[{
++				label: localize('deployai.settings.reload', 'Reload Window'),
++				run: () => this.hostService.reload()
++			}]
++		);
++		// await this.hostService.reload();
 +	}
 +
 +	private async updateConfigFile(modelId: string): Promise<void> {

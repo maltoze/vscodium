@@ -93,6 +93,15 @@ let cliProcess = null;
 const PID_FILE = path.join(os.tmpdir(), 'vscodium-cli.pid');
 const LOG_FILE = path.join(os.tmpdir(), 'vscodium-cli.log');
 
+function shouldUseLocalEnv() {
+    try {
+        const config = vscode.workspace.getConfiguration('deployai');
+        return !config.get('useClaudeAccountLogin', false);
+    } catch (err) {
+        return true;
+    }
+}
+
 function getGitBashPath() {
     const resourcesPath = path.join(__dirname, '../../..');
     const bundledGitBash = path.join(resourcesPath, 'bin', 'git-bash', 'bin', 'bash.exe');
@@ -153,10 +162,17 @@ function startCLIService(context) {
     const gitBashPath = getGitBashPath();
 
     // Set environment variables
-    process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
-    process.env.ANTHROPIC_AUTH_TOKEN = 'test';
-    process.env.ANTHROPIC_API_KEY = 'test';
-    process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+    if (shouldUseLocalEnv()) {
+        process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
+        process.env.ANTHROPIC_AUTH_TOKEN = 'test';
+        process.env.ANTHROPIC_API_KEY = 'test';
+        process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+    } else {
+      process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'false';
+      process.env.ANTHROPIC_BASE_URL = '';
+      process.env.ANTHROPIC_AUTH_TOKEN = '';
+      process.env.ANTHROPIC_API_KEY = '';
+    }
     if (gitBashPath) {
         process.env.CLAUDE_CODE_GIT_BASH_PATH = gitBashPath;
         const gitBashBinDir = path.dirname(gitBashPath);
@@ -218,10 +234,12 @@ function stopCLIService() {
 function activate(context) {
     console.log('[Startup Claude] Activating...');
 
-    process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
-    process.env.ANTHROPIC_AUTH_TOKEN = 'test';
-    process.env.ANTHROPIC_API_KEY = 'test';
-    process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+    if (shouldUseLocalEnv()) {
+        process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
+        process.env.ANTHROPIC_AUTH_TOKEN = 'test';
+        process.env.ANTHROPIC_API_KEY = 'test';
+        process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+    }
     // Get Git Bash path
     const gitBashPath = getGitBashPath();
     if (gitBashPath) {

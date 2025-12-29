@@ -82,6 +82,15 @@ let cliProcess = null;
 const PID_FILE = path.join(os.tmpdir(), 'vscodium-cli.pid');
 const LOG_FILE = path.join(os.tmpdir(), 'vscodium-cli.log');
 
+function shouldUseLocalEnv() {
+    try {
+        const config = vscode.workspace.getConfiguration('deployai');
+        return !config.get('useClaudeAccountLogin', false);
+    } catch (err) {
+        return true;
+    }
+}
+
 function startCLIService(context) {
     const resourcesPath = path.join(__dirname, '../../..');
     const cliBinary = path.join(resourcesPath, 'cli');
@@ -109,10 +118,12 @@ function startCLIService(context) {
     }
 
     // Set environment variables
-    process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
-    process.env.ANTHROPIC_AUTH_TOKEN = 'test';
-    process.env.ANTHROPIC_API_KEY = 'test';
-    process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+    if (shouldUseLocalEnv()) {
+        process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
+        process.env.ANTHROPIC_AUTH_TOKEN = 'test';
+        process.env.ANTHROPIC_API_KEY = 'test';
+        process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+    }
 
     // Start CLI service
     console.log('[Startup Claude] Starting CLI service...');
@@ -168,10 +179,17 @@ function stopCLIService() {
 function activate(context) {
     console.log('[Startup Claude] Activating...');
 
-    process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
-    process.env.ANTHROPIC_AUTH_TOKEN = 'test';
-    process.env.ANTHROPIC_API_KEY = 'test';
-    process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+    if (shouldUseLocalEnv()) {
+        process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
+        process.env.ANTHROPIC_AUTH_TOKEN = 'test';
+        process.env.ANTHROPIC_API_KEY = 'test';
+        process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';
+    } else {
+      process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'false';
+      process.env.ANTHROPIC_BASE_URL = '';
+      process.env.ANTHROPIC_AUTH_TOKEN = '';
+      process.env.ANTHROPIC_API_KEY = '';
+    }
 
     // Start CLI service
     // startCLIService(context);
