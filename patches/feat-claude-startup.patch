@@ -1777,7 +1777,7 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..1e7015869c2
+index 00000000000..9c084a26ba9
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 @@ -0,0 +1,1317 @@
@@ -2704,7 +2704,7 @@ index 00000000000..1e7015869c2
 +			console.log('Config file updated successfully');
 +
 +			// Restart Claude Code Router CLI
-+			await this.hostService.restartClaudeCodeRouterCli();
++			// await this.hostService.restartClaudeCodeRouterCli();
 +		} catch (error) {
 +			console.error('Error updating config file:', error);
 +		}
