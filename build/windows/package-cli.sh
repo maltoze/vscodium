@@ -28,22 +28,6 @@ fi
 
 APP_DIR="${BUILD_DIR}/VSCode-win32-${WIN_ARCH}"
 RESOURCES_DIR="${APP_DIR}/resources"
-CLI_BIN="${BUILD_DIR}/ccr-bin/cli-win-${ARCH}.exe"
-GIT_BASH_DIR="${RESOURCES_DIR}/bin/git-bash"
-
-if [[ ! -f "${CLI_BIN}" ]]; then
-  echo "Warning: CLI binary not found at ${CLI_BIN}"
-  exit 1
-fi
-
-echo "Packaging CLI binary into app..."
-
-# Copy CLI files
-cp "${CLI_BIN}" "${RESOURCES_DIR}/cli.exe"
-
-echo "Copying CLI dependencies..."
-cp "${BUILD_DIR}/ccr-bin/tiktoken_bg.wasm" "${RESOURCES_DIR}/" 2>/dev/null || echo "Warning: tiktoken_bg.wasm not found"
-cp "${BUILD_DIR}/ccr-bin/index.html" "${RESOURCES_DIR}/" 2>/dev/null || echo "Warning: index.html not found"
 
 # Download and package Git Bash
 echo "Downloading Git Bash Portable..."
@@ -235,7 +219,7 @@ function activate(context) {
     console.log('[Startup Claude] Activating...');
 
     if (shouldUseLocalEnv()) {
-        process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:3456';
+        process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:38999';
         process.env.ANTHROPIC_AUTH_TOKEN = 'test';
         process.env.ANTHROPIC_API_KEY = 'test';
         process.env.CLAUDE_CODE_SKIP_AUTH_LOGIN = 'true';

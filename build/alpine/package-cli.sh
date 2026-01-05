@@ -27,22 +27,6 @@ fi
 
 APP_DIR="${BUILD_DIR}/VSCode-linux-${LINUX_ARCH}-alpine"
 RESOURCES_DIR="${APP_DIR}/resources"
-CLI_BIN="${BUILD_DIR}/ccr-bin/cli-${CLI_ARCH}"
-
-if [[ ! -f "${CLI_BIN}" ]]; then
-  echo "Warning: CLI binary not found at ${CLI_BIN}"
-  exit 1
-fi
-
-echo "Packaging CLI binary into app (Alpine Linux)..."
-
-# Copy CLI files
-cp "${CLI_BIN}" "${RESOURCES_DIR}/cli"
-chmod +x "${RESOURCES_DIR}/cli"
-
-echo "Copying CLI dependencies..."
-cp "${BUILD_DIR}/ccr-bin/tiktoken_bg.wasm" "${RESOURCES_DIR}/" 2>/dev/null || echo "Warning: tiktoken_bg.wasm not found"
-cp "${BUILD_DIR}/ccr-bin/index.html" "${RESOURCES_DIR}/" 2>/dev/null || echo "Warning: index.html not found"
 
 # Create startup extension to open Claude Code
 mkdir -p "${RESOURCES_DIR}/app/extensions/startup-claude"

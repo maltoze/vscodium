@@ -1,3 +1,1020 @@
+diff --git a/eslint.config.js b/eslint.config.js
+index 127bb34621f..1ad253fb189 100644
+--- a/eslint.config.js
++++ b/eslint.config.js
+@@ -804,2 +804,3 @@ export default tseslint.config(
+ 						'@vscode/windows-process-tree',
++						'@sentry/electron/main',
+ 						'assert',
+diff --git a/package-lock.json b/package-lock.json
+index 6337a215285..5fbefa39593 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -15,2 +15,3 @@
+         "@parcel/watcher": "parcel-bundler/watcher#1ca032aa8339260a8a3bcf825c3a1a71e3e43542",
++        "@sentry/electron": "^7.5.0",
+         "@types/semver": "^7.5.8",
+@@ -181,2 +182,19 @@
+     },
++    "node_modules/@apm-js-collab/code-transformer": {
++      "version": "0.8.2",
++      "resolved": "https://registry.npmjs.org/@apm-js-collab/code-transformer/-/code-transformer-0.8.2.tgz",
++      "integrity": "sha512-YRjJjNq5KFSjDUoqu5pFUWrrsvGOxl6c3bu+uMFc9HNNptZ2rNU/TI2nLw4jnhQNtka972Ee2m3uqbvDQtPeCA==",
++      "license": "Apache-2.0"
++    },
++    "node_modules/@apm-js-collab/tracing-hooks": {
++      "version": "0.3.1",
++      "resolved": "https://registry.npmjs.org/@apm-js-collab/tracing-hooks/-/tracing-hooks-0.3.1.tgz",
++      "integrity": "sha512-Vu1CbmPURlN5fTboVuKMoJjbO5qcq9fA5YXpskx3dXe/zTBvjODFoerw+69rVBlRLrJpwPqSDqEuJDEKIrTldw==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@apm-js-collab/code-transformer": "^0.8.0",
++        "debug": "^4.4.1",
++        "module-details-from-path": "^1.0.4"
++      }
++    },
+     "node_modules/@azure-rest/ai-translation-text": {
+@@ -1624,6 +1642,6 @@
+     "node_modules/@opentelemetry/api": {
+-      "version": "1.0.3",
+-      "resolved": "https://registry.npmjs.org/@opentelemetry/api/-/api-1.0.3.tgz",
+-      "integrity": "sha512-puWxACExDe9nxbBB3lOymQFrLYml2dVOrd7USiVRnSbgXE+KwBu+HxFvxrzfqsiSda9IWsXJG1ef7C1O2/GmKQ==",
+-      "dev": true,
++      "version": "1.9.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/api/-/api-1.9.0.tgz",
++      "integrity": "sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==",
++      "license": "Apache-2.0",
+       "engines": {
+@@ -1632,2 +1650,485 @@
+     },
++    "node_modules/@opentelemetry/api-logs": {
++      "version": "0.208.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/api-logs/-/api-logs-0.208.0.tgz",
++      "integrity": "sha512-CjruKY9V6NMssL/T1kAFgzosF1v9o6oeN+aX5JB/C/xPNtmgIJqcXHG7fA82Ou1zCpWGl4lROQUKwUNE1pMCyg==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      },
++      "engines": {
++        "node": ">=8.0.0"
++      }
++    },
++    "node_modules/@opentelemetry/context-async-hooks": {
++      "version": "2.2.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/context-async-hooks/-/context-async-hooks-2.2.0.tgz",
++      "integrity": "sha512-qRkLWiUEZNAmYapZ7KGS5C4OmBLcP/H2foXeOEaowYCR0wi89fHejrfYfbuLVCMLp/dWZXKvQusdbUEZjERfwQ==",
++      "license": "Apache-2.0",
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": ">=1.0.0 <1.10.0"
++      }
++    },
++    "node_modules/@opentelemetry/core": {
++      "version": "2.2.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/core/-/core-2.2.0.tgz",
++      "integrity": "sha512-FuabnnUm8LflnieVxs6eP7Z383hgQU4W1e3KJS6aOG3RxWxcHyBxH8fDMHNgu/gFx/M2jvTOW/4/PHhLz6bjWw==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/semantic-conventions": "^1.29.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": ">=1.0.0 <1.10.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation": {
++      "version": "0.208.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation/-/instrumentation-0.208.0.tgz",
++      "integrity": "sha512-Eju0L4qWcQS+oXxi6pgh7zvE2byogAkcsVv0OjHF/97iOz1N/aKE6etSGowYkie+YA1uo6DNwdSxaaNnLvcRlA==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/api-logs": "0.208.0",
++        "import-in-the-middle": "^2.0.0",
++        "require-in-the-middle": "^8.0.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-amqplib": {
++      "version": "0.55.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-amqplib/-/instrumentation-amqplib-0.55.0.tgz",
++      "integrity": "sha512-5ULoU8p+tWcQw5PDYZn8rySptGSLZHNX/7srqo2TioPnAAcvTy6sQFQXsNPrAnyRRtYGMetXVyZUy5OaX1+IfA==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/core": "^2.0.0",
++        "@opentelemetry/instrumentation": "^0.208.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-connect": {
++      "version": "0.52.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-connect/-/instrumentation-connect-0.52.0.tgz",
++      "integrity": "sha512-GXPxfNB5szMbV3I9b7kNWSmQBoBzw7MT0ui6iU/p+NIzVx3a06Ri2cdQO7tG9EKb4aKSLmfX9Cw5cKxXqX6Ohg==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/core": "^2.0.0",
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@opentelemetry/semantic-conventions": "^1.27.0",
++        "@types/connect": "3.4.38"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-dataloader": {
++      "version": "0.26.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-dataloader/-/instrumentation-dataloader-0.26.0.tgz",
++      "integrity": "sha512-P2BgnFfTOarZ5OKPmYfbXfDFjQ4P9WkQ1Jji7yH5/WwB6Wm/knynAoA1rxbjWcDlYupFkyT0M1j6XLzDzy0aCA==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/instrumentation": "^0.208.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-express": {
++      "version": "0.57.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-express/-/instrumentation-express-0.57.0.tgz",
++      "integrity": "sha512-HAdx/o58+8tSR5iW+ru4PHnEejyKrAy9fYFhlEI81o10nYxrGahnMAHWiSjhDC7UQSY3I4gjcPgSKQz4rm/asg==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/core": "^2.0.0",
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@opentelemetry/semantic-conventions": "^1.27.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-fs": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-fs/-/instrumentation-fs-0.28.0.tgz",
++      "integrity": "sha512-FFvg8fq53RRXVBRHZViP+EMxMR03tqzEGpuq55lHNbVPyFklSVfQBN50syPhK5UYYwaStx0eyCtHtbRreusc5g==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/core": "^2.0.0",
++        "@opentelemetry/instrumentation": "^0.208.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-generic-pool": {
++      "version": "0.52.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-generic-pool/-/instrumentation-generic-pool-0.52.0.tgz",
++      "integrity": "sha512-ISkNcv5CM2IwvsMVL31Tl61/p2Zm2I2NAsYq5SSBgOsOndT0TjnptjufYVScCnD5ZLD1tpl4T3GEYULLYOdIdQ==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/instrumentation": "^0.208.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-graphql": {
++      "version": "0.56.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-graphql/-/instrumentation-graphql-0.56.0.tgz",
++      "integrity": "sha512-IPvNk8AFoVzTAM0Z399t34VDmGDgwT6rIqCUug8P9oAGerl2/PEIYMPOl/rerPGu+q8gSWdmbFSjgg7PDVRd3Q==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/instrumentation": "^0.208.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-hapi": {
++      "version": "0.55.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-hapi/-/instrumentation-hapi-0.55.0.tgz",
++      "integrity": "sha512-prqAkRf9e4eEpy4G3UcR32prKE8NLNlA90TdEU1UsghOTg0jUvs40Jz8LQWFEs5NbLbXHYGzB4CYVkCI8eWEVQ==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/core": "^2.0.0",
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@opentelemetry/semantic-conventions": "^1.27.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-http": {
++      "version": "0.208.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-http/-/instrumentation-http-0.208.0.tgz",
++      "integrity": "sha512-rhmK46DRWEbQQB77RxmVXGyjs6783crXCnFjYQj+4tDH/Kpv9Rbg3h2kaNyp5Vz2emF1f9HOQQvZoHzwMWOFZQ==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/core": "2.2.0",
++        "@opentelemetry/instrumentation": "0.208.0",
++        "@opentelemetry/semantic-conventions": "^1.29.0",
++        "forwarded-parse": "2.1.2"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-ioredis": {
++      "version": "0.56.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-ioredis/-/instrumentation-ioredis-0.56.0.tgz",
++      "integrity": "sha512-XSWeqsd3rKSsT3WBz/JKJDcZD4QYElZEa0xVdX8f9dh4h4QgXhKRLorVsVkK3uXFbC2sZKAS2Ds+YolGwD83Dg==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@opentelemetry/redis-common": "^0.38.2"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-kafkajs": {
++      "version": "0.18.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-kafkajs/-/instrumentation-kafkajs-0.18.0.tgz",
++      "integrity": "sha512-KCL/1HnZN5zkUMgPyOxfGjLjbXjpd4odDToy+7c+UsthIzVLFf99LnfIBE8YSSrYE4+uS7OwJMhvhg3tWjqMBg==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@opentelemetry/semantic-conventions": "^1.30.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-knex": {
++      "version": "0.53.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-knex/-/instrumentation-knex-0.53.0.tgz",
++      "integrity": "sha512-xngn5cH2mVXFmiT1XfQ1aHqq1m4xb5wvU6j9lSgLlihJ1bXzsO543cpDwjrZm2nMrlpddBf55w8+bfS4qDh60g==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@opentelemetry/semantic-conventions": "^1.33.1"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-koa": {
++      "version": "0.57.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-koa/-/instrumentation-koa-0.57.0.tgz",
++      "integrity": "sha512-3JS8PU/D5E3q295mwloU2v7c7/m+DyCqdu62BIzWt+3u9utjxC9QS7v6WmUNuoDN3RM+Q+D1Gpj13ERo+m7CGg==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/core": "^2.0.0",
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@opentelemetry/semantic-conventions": "^1.36.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.9.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-lru-memoizer": {
++      "version": "0.53.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-lru-memoizer/-/instrumentation-lru-memoizer-0.53.0.tgz",
++      "integrity": "sha512-LDwWz5cPkWWr0HBIuZUjslyvijljTwmwiItpMTHujaULZCxcYE9eU44Qf/pbVC8TulT0IhZi+RoGvHKXvNhysw==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/instrumentation": "^0.208.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-mongodb": {
++      "version": "0.61.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-mongodb/-/instrumentation-mongodb-0.61.0.tgz",
++      "integrity": "sha512-OV3i2DSoY5M/pmLk+68xr5RvkHU8DRB3DKMzYJdwDdcxeLs62tLbkmRyqJZsYf3Ht7j11rq35pHOWLuLzXL7pQ==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/instrumentation": "^0.208.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-mongoose": {
++      "version": "0.55.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-mongoose/-/instrumentation-mongoose-0.55.0.tgz",
++      "integrity": "sha512-5afj0HfF6aM6Nlqgu6/PPHFk8QBfIe3+zF9FGpX76jWPS0/dujoEYn82/XcLSaW5LPUDW8sni+YeK0vTBNri+w==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/core": "^2.0.0",
++        "@opentelemetry/instrumentation": "^0.208.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-mysql": {
++      "version": "0.54.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-mysql/-/instrumentation-mysql-0.54.0.tgz",
++      "integrity": "sha512-bqC1YhnwAeWmRzy1/Xf9cDqxNG2d/JDkaxnqF5N6iJKN1eVWI+vg7NfDkf52/Nggp3tl1jcC++ptC61BD6738A==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@types/mysql": "2.15.27"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-mysql2": {
++      "version": "0.55.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-mysql2/-/instrumentation-mysql2-0.55.0.tgz",
++      "integrity": "sha512-0cs8whQG55aIi20gnK8B7cco6OK6N+enNhW0p5284MvqJ5EPi+I1YlWsWXgzv/V2HFirEejkvKiI4Iw21OqDWg==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@opentelemetry/semantic-conventions": "^1.33.0",
++        "@opentelemetry/sql-common": "^0.41.2"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-pg": {
++      "version": "0.61.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-pg/-/instrumentation-pg-0.61.0.tgz",
++      "integrity": "sha512-UeV7KeTnRSM7ECHa3YscoklhUtTQPs6V6qYpG283AB7xpnPGCUCUfECFT9jFg6/iZOQTt3FHkB1wGTJCNZEvPw==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/core": "^2.0.0",
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@opentelemetry/semantic-conventions": "^1.34.0",
++        "@opentelemetry/sql-common": "^0.41.2",
++        "@types/pg": "8.15.6",
++        "@types/pg-pool": "2.0.6"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-redis": {
++      "version": "0.57.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-redis/-/instrumentation-redis-0.57.0.tgz",
++      "integrity": "sha512-bCxTHQFXzrU3eU1LZnOZQ3s5LURxQPDlU3/upBzlWY77qOI1GZuGofazj3jtzjctMJeBEJhNwIFEgRPBX1kp/Q==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@opentelemetry/redis-common": "^0.38.2",
++        "@opentelemetry/semantic-conventions": "^1.27.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-tedious": {
++      "version": "0.27.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-tedious/-/instrumentation-tedious-0.27.0.tgz",
++      "integrity": "sha512-jRtyUJNZppPBjPae4ZjIQ2eqJbcRaRfJkr0lQLHFmOU/no5A6e9s1OHLd5XZyZoBJ/ymngZitanyRRA5cniseA==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@types/tedious": "^4.0.14"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.3.0"
++      }
++    },
++    "node_modules/@opentelemetry/instrumentation-undici": {
++      "version": "0.19.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/instrumentation-undici/-/instrumentation-undici-0.19.0.tgz",
++      "integrity": "sha512-Pst/RhR61A2OoZQZkn6OLpdVpXp6qn3Y92wXa6umfJe9rV640r4bc6SWvw4pPN6DiQqPu2c8gnSSZPDtC6JlpQ==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/core": "^2.0.0",
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@opentelemetry/semantic-conventions": "^1.24.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.7.0"
++      }
++    },
++    "node_modules/@opentelemetry/redis-common": {
++      "version": "0.38.2",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/redis-common/-/redis-common-0.38.2.tgz",
++      "integrity": "sha512-1BCcU93iwSRZvDAgwUxC/DV4T/406SkMfxGqu5ojc3AvNI+I9GhV7v0J1HljsczuuhcnFLYqD5VmwVXfCGHzxA==",
++      "license": "Apache-2.0",
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      }
++    },
++    "node_modules/@opentelemetry/resources": {
++      "version": "2.2.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/resources/-/resources-2.2.0.tgz",
++      "integrity": "sha512-1pNQf/JazQTMA0BiO5NINUzH0cbLbbl7mntLa4aJNmCCXSj0q03T5ZXXL0zw4G55TjdL9Tz32cznGClf+8zr5A==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/core": "2.2.0",
++        "@opentelemetry/semantic-conventions": "^1.29.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": ">=1.3.0 <1.10.0"
++      }
++    },
++    "node_modules/@opentelemetry/sdk-trace-base": {
++      "version": "2.2.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/sdk-trace-base/-/sdk-trace-base-2.2.0.tgz",
++      "integrity": "sha512-xWQgL0Bmctsalg6PaXExmzdedSp3gyKV8mQBwK/j9VGdCDu2fmXIb2gAehBKbkXCpJ4HPkgv3QfoJWRT4dHWbw==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/core": "2.2.0",
++        "@opentelemetry/resources": "2.2.0",
++        "@opentelemetry/semantic-conventions": "^1.29.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": ">=1.3.0 <1.10.0"
++      }
++    },
++    "node_modules/@opentelemetry/semantic-conventions": {
++      "version": "1.38.0",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/semantic-conventions/-/semantic-conventions-1.38.0.tgz",
++      "integrity": "sha512-kocjix+/sSggfJhwXqClZ3i9Y/MI0fp7b+g7kCRm6psy2dsf8uApTRclwG18h8Avm7C9+fnt+O36PspJ/OzoWg==",
++      "license": "Apache-2.0",
++      "engines": {
++        "node": ">=14"
++      }
++    },
++    "node_modules/@opentelemetry/sql-common": {
++      "version": "0.41.2",
++      "resolved": "https://registry.npmjs.org/@opentelemetry/sql-common/-/sql-common-0.41.2.tgz",
++      "integrity": "sha512-4mhWm3Z8z+i508zQJ7r6Xi7y4mmoJpdvH0fZPFRkWrdp5fq7hhZ2HhYokEOLkfqSMgPR4Z9EyB3DBkbKGOqZiQ==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/core": "^2.0.0"
++      },
++      "engines": {
++        "node": "^18.19.0 || >=20.6.0"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.1.0"
++      }
++    },
+     "node_modules/@parcel/watcher": {
+@@ -1704,2 +2205,14 @@
+     },
++    "node_modules/@prisma/instrumentation": {
++      "version": "6.19.0",
++      "resolved": "https://registry.npmjs.org/@prisma/instrumentation/-/instrumentation-6.19.0.tgz",
++      "integrity": "sha512-QcuYy25pkXM8BJ37wVFBO7Zh34nyRV1GOb2n3lPkkbRYfl4hWl3PTcImP41P0KrzVXfa/45p6eVCos27x3exIg==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@opentelemetry/instrumentation": ">=0.52.0 <1"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.8"
++      }
++    },
+     "node_modules/@sec-ant/readable-stream": {
+@@ -1711,2 +2224,209 @@
+     },
++    "node_modules/@sentry-internal/browser-utils": {
++      "version": "10.29.0",
++      "resolved": "https://registry.npmjs.org/@sentry-internal/browser-utils/-/browser-utils-10.29.0.tgz",
++      "integrity": "sha512-M3kycMY6f3KY9a8jDYac+yG0E3ZgWVWSxlOEC5MhYyX+g7mqxkwrb3LFQyuxSm/m+CCgMTCaPOOaB2twXP6EQg==",
++      "license": "MIT",
++      "dependencies": {
++        "@sentry/core": "10.29.0"
++      },
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@sentry-internal/feedback": {
++      "version": "10.29.0",
++      "resolved": "https://registry.npmjs.org/@sentry-internal/feedback/-/feedback-10.29.0.tgz",
++      "integrity": "sha512-Y7IRsNeS99cEONu1mZWZc3HvbjNnu59Hgymm0swFFKbdgbCgdT6l85kn2oLsuq4Ew8Dw/pL/Sgpwsl9UgYFpUg==",
++      "license": "MIT",
++      "dependencies": {
++        "@sentry/core": "10.29.0"
++      },
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@sentry-internal/replay": {
++      "version": "10.29.0",
++      "resolved": "https://registry.npmjs.org/@sentry-internal/replay/-/replay-10.29.0.tgz",
++      "integrity": "sha512-45NVw9PwB9TQ8z+xJ6G6Za+wmQ1RTA35heBSzR6U4bknj8LmA04k2iwnobvxCBEQXeLfcJEO1vFgagMoqMZMBw==",
++      "license": "MIT",
++      "dependencies": {
++        "@sentry-internal/browser-utils": "10.29.0",
++        "@sentry/core": "10.29.0"
++      },
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@sentry-internal/replay-canvas": {
++      "version": "10.29.0",
++      "resolved": "https://registry.npmjs.org/@sentry-internal/replay-canvas/-/replay-canvas-10.29.0.tgz",
++      "integrity": "sha512-typY4JrpAQQGPuSyd/BD8+nNCbvTV2UVvKzr+iKgI0m1qc4Dz8tHZ4Nfais2Z8eYn/pL1kqVQN5ERTmJoYFdIw==",
++      "license": "MIT",
++      "dependencies": {
++        "@sentry-internal/replay": "10.29.0",
++        "@sentry/core": "10.29.0"
++      },
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@sentry/browser": {
++      "version": "10.29.0",
++      "resolved": "https://registry.npmjs.org/@sentry/browser/-/browser-10.29.0.tgz",
++      "integrity": "sha512-XdbyIR6F4qoR9Z1JCWTgunVcTJjS9p2Th+v4wYs4ME+ZdLC4tuKKmRgYg3YdSIWCn1CBfIgdI6wqETSf7H6Njw==",
++      "license": "MIT",
++      "dependencies": {
++        "@sentry-internal/browser-utils": "10.29.0",
++        "@sentry-internal/feedback": "10.29.0",
++        "@sentry-internal/replay": "10.29.0",
++        "@sentry-internal/replay-canvas": "10.29.0",
++        "@sentry/core": "10.29.0"
++      },
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@sentry/core": {
++      "version": "10.29.0",
++      "resolved": "https://registry.npmjs.org/@sentry/core/-/core-10.29.0.tgz",
++      "integrity": "sha512-olQ2DU9dA/Bwsz3PtA9KNXRMqBWRQSkPw+MxwWEoU1K1qtiM9L0j6lbEFb5iSY3d7WYD5MB+1d5COugjSBrHtw==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@sentry/electron": {
++      "version": "7.5.0",
++      "resolved": "https://registry.npmjs.org/@sentry/electron/-/electron-7.5.0.tgz",
++      "integrity": "sha512-88t/YsB5iO75faKdd7lIuJkwp9FGKgFlkDuaSJhsJiVcjlywkn8CwUbctAbS0gu6Suc0raHCF4ULvGyksKAoww==",
++      "license": "MIT",
++      "dependencies": {
++        "@sentry/browser": "10.29.0",
++        "@sentry/core": "10.29.0",
++        "@sentry/node": "10.29.0"
++      },
++      "peerDependencies": {
++        "@sentry/node-native": "10.29.0"
++      },
++      "peerDependenciesMeta": {
++        "@sentry/node-native": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/@sentry/node": {
++      "version": "10.29.0",
++      "resolved": "https://registry.npmjs.org/@sentry/node/-/node-10.29.0.tgz",
++      "integrity": "sha512-9j8VzV06VCj+H8tlxpfa7BNN4HzH5exv68WOufdMTXzzWLOXnzrdNDoYplm1G2S3LMvWsc1SVI3a8A0yBY7oWg==",
++      "license": "MIT",
++      "dependencies": {
++        "@opentelemetry/api": "^1.9.0",
++        "@opentelemetry/context-async-hooks": "^2.2.0",
++        "@opentelemetry/core": "^2.2.0",
++        "@opentelemetry/instrumentation": "^0.208.0",
++        "@opentelemetry/instrumentation-amqplib": "0.55.0",
++        "@opentelemetry/instrumentation-connect": "0.52.0",
++        "@opentelemetry/instrumentation-dataloader": "0.26.0",
++        "@opentelemetry/instrumentation-express": "0.57.0",
++        "@opentelemetry/instrumentation-fs": "0.28.0",
++        "@opentelemetry/instrumentation-generic-pool": "0.52.0",
++        "@opentelemetry/instrumentation-graphql": "0.56.0",
++        "@opentelemetry/instrumentation-hapi": "0.55.0",
++        "@opentelemetry/instrumentation-http": "0.208.0",
++        "@opentelemetry/instrumentation-ioredis": "0.56.0",
++        "@opentelemetry/instrumentation-kafkajs": "0.18.0",
++        "@opentelemetry/instrumentation-knex": "0.53.0",
++        "@opentelemetry/instrumentation-koa": "0.57.0",
++        "@opentelemetry/instrumentation-lru-memoizer": "0.53.0",
++        "@opentelemetry/instrumentation-mongodb": "0.61.0",
++        "@opentelemetry/instrumentation-mongoose": "0.55.0",
++        "@opentelemetry/instrumentation-mysql": "0.54.0",
++        "@opentelemetry/instrumentation-mysql2": "0.55.0",
++        "@opentelemetry/instrumentation-pg": "0.61.0",
++        "@opentelemetry/instrumentation-redis": "0.57.0",
++        "@opentelemetry/instrumentation-tedious": "0.27.0",
++        "@opentelemetry/instrumentation-undici": "0.19.0",
++        "@opentelemetry/resources": "^2.2.0",
++        "@opentelemetry/sdk-trace-base": "^2.2.0",
++        "@opentelemetry/semantic-conventions": "^1.37.0",
++        "@prisma/instrumentation": "6.19.0",
++        "@sentry/core": "10.29.0",
++        "@sentry/node-core": "10.29.0",
++        "@sentry/opentelemetry": "10.29.0",
++        "import-in-the-middle": "^2",
++        "minimatch": "^9.0.0"
++      },
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@sentry/node-core": {
++      "version": "10.29.0",
++      "resolved": "https://registry.npmjs.org/@sentry/node-core/-/node-core-10.29.0.tgz",
++      "integrity": "sha512-f/Y0okHhPPb5HnYNBqCivJ2YuXtSadvcIx16dzU5mHQxZhgGednUCPEX7rsvPcd4HneQz12HKLqxbAmNu+b3FA==",
++      "license": "MIT",
++      "dependencies": {
++        "@apm-js-collab/tracing-hooks": "^0.3.1",
++        "@sentry/core": "10.29.0",
++        "@sentry/opentelemetry": "10.29.0",
++        "import-in-the-middle": "^2"
++      },
++      "engines": {
++        "node": ">=18"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.9.0",
++        "@opentelemetry/context-async-hooks": "^1.30.1 || ^2.1.0 || ^2.2.0",
++        "@opentelemetry/core": "^1.30.1 || ^2.1.0 || ^2.2.0",
++        "@opentelemetry/instrumentation": ">=0.57.1 <1",
++        "@opentelemetry/resources": "^1.30.1 || ^2.1.0 || ^2.2.0",
++        "@opentelemetry/sdk-trace-base": "^1.30.1 || ^2.1.0 || ^2.2.0",
++        "@opentelemetry/semantic-conventions": "^1.37.0"
++      }
++    },
++    "node_modules/@sentry/node/node_modules/brace-expansion": {
++      "version": "2.0.2",
++      "resolved": "https://registry.npmjs.org/brace-expansion/-/brace-expansion-2.0.2.tgz",
++      "integrity": "sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ==",
++      "license": "MIT",
++      "dependencies": {
++        "balanced-match": "^1.0.0"
++      }
++    },
++    "node_modules/@sentry/node/node_modules/minimatch": {
++      "version": "9.0.5",
++      "resolved": "https://registry.npmjs.org/minimatch/-/minimatch-9.0.5.tgz",
++      "integrity": "sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow==",
++      "license": "ISC",
++      "dependencies": {
++        "brace-expansion": "^2.0.1"
++      },
++      "engines": {
++        "node": ">=16 || 14 >=14.17"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/isaacs"
++      }
++    },
++    "node_modules/@sentry/opentelemetry": {
++      "version": "10.29.0",
++      "resolved": "https://registry.npmjs.org/@sentry/opentelemetry/-/opentelemetry-10.29.0.tgz",
++      "integrity": "sha512-5QvtAwS73HlI/+OTF1poAFELzsc0se+PHmMsXGGrOeNBvjCr3ZE8qvke09aeMn7uRImf3Nc9J6i2KtSHJnbKPA==",
++      "license": "MIT",
++      "dependencies": {
++        "@sentry/core": "10.29.0"
++      },
++      "engines": {
++        "node": ">=18"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.9.0",
++        "@opentelemetry/context-async-hooks": "^1.30.1 || ^2.1.0 || ^2.2.0",
++        "@opentelemetry/core": "^1.30.1 || ^2.1.0 || ^2.2.0",
++        "@opentelemetry/sdk-trace-base": "^1.30.1 || ^2.1.0 || ^2.2.0",
++        "@opentelemetry/semantic-conventions": "^1.37.0"
++      }
++    },
+     "node_modules/@sindresorhus/is": {
+@@ -1910,2 +2630,11 @@
+     },
++    "node_modules/@types/connect": {
++      "version": "3.4.38",
++      "resolved": "https://registry.npmjs.org/@types/connect/-/connect-3.4.38.tgz",
++      "integrity": "sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/node": "*"
++      }
++    },
+     "node_modules/@types/cookie": {
+@@ -2050,2 +2779,11 @@
+     },
++    "node_modules/@types/mysql": {
++      "version": "2.15.27",
++      "resolved": "https://registry.npmjs.org/@types/mysql/-/mysql-2.15.27.tgz",
++      "integrity": "sha512-YfWiV16IY0OeBfBCk8+hXKmdTKrKlwKN1MNKAPBu5JYxLwBEZl7QzeEpGnlZb3VMGJrrGmB84gXiH+ofs/TezA==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/node": "*"
++      }
++    },
+     "node_modules/@types/node": {
+@@ -2054,3 +2792,2 @@
+       "integrity": "sha512-I6LPUvlRH+O6VRUqYOcMudhaIdUVWfsjnZavnsraHvpBwaEyMN29ry+0UVJhImYL16xsscu0aske3yA+uPOWfw==",
+-      "dev": true,
+       "license": "MIT",
+@@ -2084,2 +2821,22 @@
+     },
++    "node_modules/@types/pg": {
++      "version": "8.15.6",
++      "resolved": "https://registry.npmjs.org/@types/pg/-/pg-8.15.6.tgz",
++      "integrity": "sha512-NoaMtzhxOrubeL/7UZuNTrejB4MPAJ0RpxZqXQf2qXuVlTPuG6Y8p4u9dKRaue4yjmC7ZhzVO2/Yyyn25znrPQ==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/node": "*",
++        "pg-protocol": "*",
++        "pg-types": "^2.2.0"
++      }
++    },
++    "node_modules/@types/pg-pool": {
++      "version": "2.0.6",
++      "resolved": "https://registry.npmjs.org/@types/pg-pool/-/pg-pool-2.0.6.tgz",
++      "integrity": "sha512-TaAUE5rq2VQYxab5Ts7WZhKNmuN78Q6PiFonTDdpbx8a1H0M1vhy3rhiMjl+e2iHmogyMw7jZF4FrE6eJUy5HQ==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/pg": "*"
++      }
++    },
+     "node_modules/@types/responselike": {
+@@ -2122,2 +2879,11 @@
+     },
++    "node_modules/@types/tedious": {
++      "version": "4.0.14",
++      "resolved": "https://registry.npmjs.org/@types/tedious/-/tedious-4.0.14.tgz",
++      "integrity": "sha512-KHPsfX/FoVbUGbyYvk1q9MMQHLPeRZhRJZdO45Q4YjvFkv4hMNghCWTvy7rdKessBsmtz4euWCWAB6/tVpI1Iw==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/node": "*"
++      }
++    },
+     "node_modules/@types/trusted-types": {
+@@ -3714,3 +4480,2 @@
+       "integrity": "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==",
+-      "dev": true,
+       "license": "MIT",
+@@ -3723,2 +4488,11 @@
+     },
++    "node_modules/acorn-import-attributes": {
++      "version": "1.9.5",
++      "resolved": "https://registry.npmjs.org/acorn-import-attributes/-/acorn-import-attributes-1.9.5.tgz",
++      "integrity": "sha512-n02Vykv5uA3eHGM/Z2dQrcD56kL8TyDb2p1+0P83PClMnC/nc+anbQRhIOWnSq4Ke/KvDPrY3C9hDtC/A3eHnQ==",
++      "license": "MIT",
++      "peerDependencies": {
++        "acorn": "^8"
++      }
++    },
+     "node_modules/acorn-import-phases": {
+@@ -4299,4 +5073,3 @@
+       "resolved": "https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz",
+-      "integrity": "sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==",
+-      "dev": true
++      "integrity": "sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw=="
+     },
+@@ -4962,2 +5735,8 @@
+     },
++    "node_modules/cjs-module-lexer": {
++      "version": "1.4.3",
++      "resolved": "https://registry.npmjs.org/cjs-module-lexer/-/cjs-module-lexer-1.4.3.tgz",
++      "integrity": "sha512-9z8TZaGM1pfswYeXrUpzPrkx8UnWYdhJclsiYMm6x/w5+nN+8Tf/LnAgfLGQCm59qAOxU8WwHEq2vNwF6i4j+Q==",
++      "license": "MIT"
++    },
+     "node_modules/class-utils": {
+@@ -7699,2 +8478,8 @@
+     },
++    "node_modules/forwarded-parse": {
++      "version": "2.1.2",
++      "resolved": "https://registry.npmjs.org/forwarded-parse/-/forwarded-parse-2.1.2.tgz",
++      "integrity": "sha512-alTFZZQDKMporBH77856pXgzhEzaUVmLCDk+egLgIgHst3Tpndzz8MnKe+GzRJRfvVdn69HhpW7cmXzvtLvJAw==",
++      "license": "MIT"
++    },
+     "node_modules/fragment-cache": {
+@@ -10345,2 +11130,14 @@
+     },
++    "node_modules/import-in-the-middle": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/import-in-the-middle/-/import-in-the-middle-2.0.1.tgz",
++      "integrity": "sha512-bruMpJ7xz+9jwGzrwEhWgvRrlKRYCRDBrfU+ur3FcasYXLJDxTruJ//8g2Noj+QFyRBeqbpj8Bhn4Fbw6HjvhA==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "acorn": "^8.14.0",
++        "acorn-import-attributes": "^1.9.5",
++        "cjs-module-lexer": "^1.2.2",
++        "module-details-from-path": "^1.0.3"
++      }
++    },
+     "node_modules/import-local": {
+@@ -12605,2 +13402,8 @@
+     },
++    "node_modules/module-details-from-path": {
++      "version": "1.0.4",
++      "resolved": "https://registry.npmjs.org/module-details-from-path/-/module-details-from-path-1.0.4.tgz",
++      "integrity": "sha512-EGWKgxALGMgzvxYF1UyGTy0HXX/2vHLkw6+NvDKW2jypWbHpjQuj4UMcqQWXHERJhVGKikolT06G3bcKe4fi7w==",
++      "license": "MIT"
++    },
+     "node_modules/morgan": {
+@@ -13939,2 +14742,33 @@
+     },
++    "node_modules/pg-int8": {
++      "version": "1.0.1",
++      "resolved": "https://registry.npmjs.org/pg-int8/-/pg-int8-1.0.1.tgz",
++      "integrity": "sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw==",
++      "license": "ISC",
++      "engines": {
++        "node": ">=4.0.0"
++      }
++    },
++    "node_modules/pg-protocol": {
++      "version": "1.10.3",
++      "resolved": "https://registry.npmjs.org/pg-protocol/-/pg-protocol-1.10.3.tgz",
++      "integrity": "sha512-6DIBgBQaTKDJyxnXaLiLR8wBpQQcGWuAESkRBX/t6OwA8YsqP+iVSiond2EDy6Y/dsGk8rh/jtax3js5NeV7JQ==",
++      "license": "MIT"
++    },
++    "node_modules/pg-types": {
++      "version": "2.2.0",
++      "resolved": "https://registry.npmjs.org/pg-types/-/pg-types-2.2.0.tgz",
++      "integrity": "sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==",
++      "license": "MIT",
++      "dependencies": {
++        "pg-int8": "1.0.1",
++        "postgres-array": "~2.0.0",
++        "postgres-bytea": "~1.0.0",
++        "postgres-date": "~1.0.4",
++        "postgres-interval": "^1.1.0"
++      },
++      "engines": {
++        "node": ">=4"
++      }
++    },
+     "node_modules/picocolors": {
+@@ -14274,2 +15108,41 @@
+     },
++    "node_modules/postgres-array": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/postgres-array/-/postgres-array-2.0.0.tgz",
++      "integrity": "sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=4"
++      }
++    },
++    "node_modules/postgres-bytea": {
++      "version": "1.0.1",
++      "resolved": "https://registry.npmjs.org/postgres-bytea/-/postgres-bytea-1.0.1.tgz",
++      "integrity": "sha512-5+5HqXnsZPE65IJZSMkZtURARZelel2oXUEO8rH83VS/hxH5vv1uHquPg5wZs8yMAfdv971IU+kcPUczi7NVBQ==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=0.10.0"
++      }
++    },
++    "node_modules/postgres-date": {
++      "version": "1.0.7",
++      "resolved": "https://registry.npmjs.org/postgres-date/-/postgres-date-1.0.7.tgz",
++      "integrity": "sha512-suDmjLVQg78nMK2UZ454hAG+OAW+HQPZ6n++TNDUX+L0+uUlLywnoxJKDou51Zm+zTCjrCl0Nq6J9C5hP9vK/Q==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=0.10.0"
++      }
++    },
++    "node_modules/postgres-interval": {
++      "version": "1.2.0",
++      "resolved": "https://registry.npmjs.org/postgres-interval/-/postgres-interval-1.2.0.tgz",
++      "integrity": "sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==",
++      "license": "MIT",
++      "dependencies": {
++        "xtend": "^4.0.0"
++      },
++      "engines": {
++        "node": ">=0.10.0"
++      }
++    },
+     "node_modules/prebuild-install": {
+@@ -14895,2 +15768,15 @@
+     },
++    "node_modules/require-in-the-middle": {
++      "version": "8.0.1",
++      "resolved": "https://registry.npmjs.org/require-in-the-middle/-/require-in-the-middle-8.0.1.tgz",
++      "integrity": "sha512-QT7FVMXfWOYFbeRBF6nu+I6tr2Tf3u0q8RIEjNob/heKY/nh7drD/k7eeMFmSQgnTtCzLDcCu/XEnpW2wk4xCQ==",
++      "license": "MIT",
++      "dependencies": {
++        "debug": "^4.3.5",
++        "module-details-from-path": "^1.0.3"
++      },
++      "engines": {
++        "node": ">=9.3.0 || >=8.10.0 <9.0.0"
++      }
++    },
+     "node_modules/require-main-filename": {
+@@ -17356,3 +18242,2 @@
+       "integrity": "sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==",
+-      "dev": true,
+       "license": "MIT"
+@@ -18281,3 +19166,2 @@
+       "integrity": "sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==",
+-      "dev": true,
+       "engines": {
+diff --git a/package.json b/package.json
+index c758b5231af..54eff300eb3 100644
+--- a/package.json
++++ b/package.json
+@@ -76,2 +76,3 @@
+     "@parcel/watcher": "parcel-bundler/watcher#1ca032aa8339260a8a3bcf825c3a1a71e3e43542",
++    "@sentry/electron": "^7.5.0",
+     "@types/semver": "^7.5.8",
+diff --git a/src/main.ts b/src/main.ts
+index deba4c449cf..2bda4d34692 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -21,2 +21,3 @@ import { INLSConfiguration } from './vs/nls.js';
+ import { NativeParsedArgs } from './vs/platform/environment/common/argv.js';
++import './sentry.js';
+ 
+diff --git a/src/sentry.js b/src/sentry.js
+new file mode 100644
+index 00000000000..0a0717c8441
+--- /dev/null
++++ b/src/sentry.js
+@@ -0,0 +1,10 @@
++/*---------------------------------------------------------------------------------------------
++ *  Copyright (c) Microsoft Corporation. All rights reserved.
++ *  Licensed under the MIT License. See License.txt in the project root for license information.
++ *--------------------------------------------------------------------------------------------*/
++
++import * as Sentry from '@sentry/electron/main';
++
++Sentry.init({
++	dsn: 'https://22d8500560836e8c5139fe5f3ea172c3@o82598.ingest.us.sentry.io/4510650912931840',
++});
 diff --git a/src/vs/code/electron-main/cliStopHandler.ts b/src/vs/code/electron-main/cliStopHandler.ts
 new file mode 100644
 index 00000000000..1702b4dc784
@@ -101,6 +1118,687 @@ index fb06a689254..5b95642a971 100644
 +					const cliStopHandler = instantiationService.createInstance(CliStopHandler);
 +					evt.join('cliStop', cliStopHandler.stopCli());
  				});
+diff --git a/src/vs/platform/deployai/common/deployaiProxyConfig.ts b/src/vs/platform/deployai/common/deployaiProxyConfig.ts
+new file mode 100644
+index 00000000000..52220945af9
+--- /dev/null
++++ b/src/vs/platform/deployai/common/deployaiProxyConfig.ts
+@@ -0,0 +1,19 @@
++/*---------------------------------------------------------------------------------------------
++ *  Copyright (c) Microsoft Corporation. All rights reserved.
++ *  Licensed under the MIT License. See License.txt in the project root for license information.
++ *--------------------------------------------------------------------------------------------*/
++
++export const DEPLOYAI_PROXY_CONFIG_STORAGE_KEY = 'deployai.proxy.config';
++export const DEFAULT_DEPLOYAI_PROXY_PORT = 38999;
++
++export type DeployAIProxyMode = 'modelproxy' | 'custom';
++
++export interface DeployAIProxyConfig {
++	version: 1;
++	mode: DeployAIProxyMode;
++	endpoint: string;
++	model: string;
++	apiKey?: string;
++	headers?: Record<string, string>;
++	port?: number;
++}
+diff --git a/src/vs/platform/deployai/electron-main/deployAIProxyServer.ts b/src/vs/platform/deployai/electron-main/deployAIProxyServer.ts
+new file mode 100644
+index 00000000000..87302f7a347
+--- /dev/null
++++ b/src/vs/platform/deployai/electron-main/deployAIProxyServer.ts
+@@ -0,0 +1,650 @@
++/*---------------------------------------------------------------------------------------------
++ *  Copyright (c) Microsoft Corporation. All rights reserved.
++ *  Licensed under the MIT License. See License.txt in the project root for license information.
++ *--------------------------------------------------------------------------------------------*/
++
++import { createServer, IncomingMessage, request as httpRequest, ServerResponse } from 'http';
++import { request as httpsRequest } from 'https';
++import { pipeline as pipelineCallback } from 'stream';
++import { URL } from 'url';
++import { promisify } from 'util';
++import { Disposable } from '../../../base/common/lifecycle.js';
++import { findFreePort } from '../../../base/node/ports.js';
++import { ILogService } from '../../log/common/log.js';
++import { DeployAIProxyConfig } from '../common/deployaiProxyConfig.js';
++
++const DEFAULT_PORT_SCAN_RETRIES = 25;
++const DEFAULT_PORT_SCAN_TIMEOUT_MS = 2000;
++
++const pipeline = promisify(pipelineCallback);
++
++export class DeployAIProxyServer extends Disposable {
++	private server: ReturnType<typeof createServer> | undefined;
++	private activePort: number | undefined;
++
++	constructor(
++		@ILogService private readonly logService: ILogService
++	) {
++		super();
++	}
++
++	get port(): number | undefined {
++		return this.activePort;
++	}
++
++	async start(config: DeployAIProxyConfig, preferredPort: number): Promise<number> {
++		await this.stop();
++
++		const endpoint = config.endpoint?.trim();
++		if (!endpoint) {
++			throw new Error('DeployAI proxy endpoint is missing');
++		}
++
++		const port = await this.resolvePort(preferredPort);
++		this.server = createServer((req, res) => {
++			this.handleRequest(req, res, config).catch(error => {
++				this.logService.error('DeployAI proxy request failed:', error);
++				if (!res.headersSent) {
++					res.statusCode = 502;
++				}
++				res.end();
++			});
++		});
++
++		await new Promise<void>((resolve, reject) => {
++			this.server!.once('error', reject);
++			this.server!.listen(port, '127.0.0.1', () => resolve());
++		});
++
++		this.activePort = port;
++		this.logService.info(`DeployAI proxy server listening on 127.0.0.1:${port}`);
++		return port;
++	}
++
++	async stop(): Promise<void> {
++		if (!this.server) {
++			return;
++		}
++
++		const server = this.server;
++		this.server = undefined;
++		this.activePort = undefined;
++
++		await new Promise<void>((resolve) => server.close(() => resolve()));
++	}
++
++	private async resolvePort(preferredPort: number): Promise<number> {
++		if (preferredPort <= 0) {
++			throw new Error('Preferred port must be greater than 0');
++		}
++
++		const port = await findFreePort(preferredPort, DEFAULT_PORT_SCAN_RETRIES, DEFAULT_PORT_SCAN_TIMEOUT_MS);
++		if (port > 0) {
++			return port;
++		}
++
++		throw new Error('Unable to find a free port for DeployAI proxy server');
++	}
++
++	private async handleRequest(req: IncomingMessage, res: ServerResponse, config: DeployAIProxyConfig): Promise<void> {
++		const incomingUrl = new URL(req.url ?? '/', 'http://localhost');
++		if (incomingUrl.pathname.startsWith('/v1/messages/count_tokens')) {
++			const bodyBuffer = await this.readRequestBody(req);
++			const payload = this.parseJson(bodyBuffer.toString('utf-8'));
++			const inputTokens = this.estimateClaudeTokens(payload);
++			const responseBody = Buffer.from(JSON.stringify({ input_tokens: inputTokens }));
++			res.writeHead(200, {
++				'content-type': 'application/json',
++				'content-length': String(responseBody.length)
++			});
++			res.end(responseBody);
++			return;
++		}
++
++		const isClaudeMessages = incomingUrl.pathname.startsWith('/v1/messages');
++		const targetPath = isClaudeMessages ? '/v1/chat/completions' : `${incomingUrl.pathname}${incomingUrl.search}`;
++		const targetUrl = this.resolveTargetUrl(config.endpoint, targetPath);
++		const outgoingHeaders: Record<string, string | string[] | undefined> = { ...req.headers };
++
++		delete outgoingHeaders.host;
++		delete outgoingHeaders['content-length'];
++
++		// if (config.apiKey && !this.hasAuthorizationHeader(outgoingHeaders)) {
++		outgoingHeaders.authorization = `Bearer ${config.apiKey}`;
++		// }
++
++		if (config.headers) {
++			for (const [key, value] of Object.entries(config.headers)) {
++				outgoingHeaders[key.toLowerCase()] = value;
++			}
++		}
++
++		const bodyBuffer = await this.readRequestBody(req);
++		let forwardBody = bodyBuffer;
++		let requestPayload: any | undefined;
++
++		if (isClaudeMessages && bodyBuffer.length > 0) {
++			requestPayload = this.parseJson(bodyBuffer.toString('utf-8'));
++			const converted = this.convertClaudeToOpenAI(requestPayload, config);
++			forwardBody = Buffer.from(JSON.stringify(converted));
++		}
++
++		const requestFn = targetUrl.protocol === 'https:' ? httpsRequest : httpRequest;
++		const proxyReq = requestFn(targetUrl, { method: req.method, headers: { ...outgoingHeaders, 'content-length': String(forwardBody.length) } }, proxyRes => {
++
++			if (isClaudeMessages) {
++				this.handleClaudeResponse(proxyRes, res, config, requestPayload).catch(error => {
++					this.logService.error('DeployAI proxy Claude response failed:', error);
++					if (!res.headersSent) {
++						res.statusCode = 502;
++					}
++					res.end();
++				});
++				return;
++			}
++
++
++			res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
++			pipeline(proxyRes, res).catch(error => {
++				this.logService.error('DeployAI proxy response stream failed:', error);
++				res.end();
++			});
++		});
++
++		proxyReq.on('error', error => {
++			this.logService.error('DeployAI proxy upstream request failed:', error);
++			if (!res.headersSent) {
++				res.statusCode = 502;
++			}
++			res.end();
++		});
++
++		proxyReq.write(forwardBody);
++		proxyReq.end();
++	}
++
++	private resolveTargetUrl(endpoint: string, pathname: string): URL {
++		const base = new URL(endpoint);
++		if (!pathname || pathname === '/' || base.pathname !== '/') {
++			return base;
++		}
++
++		const baseWithSlash = endpoint.endsWith('/') ? endpoint : `${endpoint}/`;
++		return new URL(pathname, baseWithSlash);
++	}
++
++	// private hasAuthorizationHeader(headers: Record<string, string | string[] | undefined>): boolean {
++	// 	return Object.keys(headers).some(header => header.toLowerCase() === 'authorization');
++	// }
++
++	private async readRequestBody(req: IncomingMessage): Promise<Buffer> {
++		const chunks: Buffer[] = [];
++		for await (const chunk of req) {
++			chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
++		}
++		return Buffer.concat(chunks);
++	}
++
++	private parseJson(value: string): any {
++		try {
++			return JSON.parse(value);
++		} catch (error) {
++			this.logService.error('DeployAI proxy JSON parse failed:', error);
++			return {};
++		}
++	}
++
++	private convertClaudeToOpenAI(payload: any, config: DeployAIProxyConfig): Record<string, unknown> {
++		const systemText = this.normalizeClaudeContent(payload?.system);
++		const messages: Array<{ role: string; content?: string; tool_calls?: Array<{ id: string; type: 'function'; function: { name: string; arguments: string } }>; tool_call_id?: string }> = [];
++
++		if (systemText) {
++			messages.push({ role: 'system', content: systemText });
++		}
++
++		for (const message of payload?.messages ?? []) {
++			const role = message?.role ?? 'user';
++			const content = message?.content;
++			if (typeof content === 'string') {
++				messages.push({ role, content });
++				continue;
++			}
++
++			if (Array.isArray(content)) {
++				if (role === 'user') {
++					const toolResults = content.filter((part: any) => part?.type === 'tool_result' && part?.tool_use_id);
++					for (const toolResult of toolResults) {
++						const toolContent = typeof toolResult.content === 'string' ? toolResult.content : JSON.stringify(toolResult.content ?? {});
++						messages.push({
++							role: 'tool',
++							content: toolContent,
++							tool_call_id: toolResult.tool_use_id
++						});
++					}
++
++					const textParts = content.filter((part: any) => part?.type === 'text' && typeof part.text === 'string');
++					const textContent = textParts.map((part: any) => part.text).join('');
++					if (textContent) {
++						messages.push({ role: 'user', content: textContent });
++					}
++					continue;
++				}
++
++				if (role === 'assistant') {
++					const textParts = content.filter((part: any) => part?.type === 'text' && typeof part.text === 'string');
++					const textContent = textParts.map((part: any) => part.text).join('');
++					const toolUseParts = content.filter((part: any) => part?.type === 'tool_use' && part?.id && part?.name);
++					const toolCalls = toolUseParts.map((part: any) => ({
++						id: part.id,
++						type: 'function' as const,
++						function: {
++							name: part.name,
++							arguments: JSON.stringify(part.input ?? {})
++						}
++					}));
++
++					const assistantMessage: { role: string; content?: string; tool_calls?: Array<{ id: string; type: 'function'; function: { name: string; arguments: string } }> } = {
++						role: 'assistant'
++					};
++					if (textContent) {
++						assistantMessage.content = textContent;
++					}
++					if (toolCalls.length) {
++						assistantMessage.tool_calls = toolCalls;
++					}
++					if (assistantMessage.content || assistantMessage.tool_calls) {
++						messages.push(assistantMessage);
++					}
++				}
++			}
++		}
++
++		const tools = this.mapClaudeTools(payload?.tools);
++		const toolChoice = this.mapClaudeToolChoice(payload?.tool_choice);
++
++		return {
++			model: config.model,
++			messages,
++			max_tokens: payload?.max_tokens,
++			temperature: payload?.temperature,
++			top_p: payload?.top_p,
++			stream: payload?.stream,
++			stream_options: payload?.stream_options,
++			stop: payload?.stop,
++			tools,
++			tool_choice: toolChoice
++		};
++	}
++
++	private normalizeClaudeContent(content: unknown): string {
++		if (!content) {
++			return '';
++		}
++
++		if (typeof content === 'string') {
++			return content;
++		}
++
++		if (Array.isArray(content)) {
++			return content
++				.filter(block => block && block.type === 'text' && typeof block.text === 'string')
++				.map(block => block.text)
++				.join('');
++		}
++
++		return '';
++	}
++
++	private mapClaudeTools(tools: any): Array<{ type: 'function'; function: { name: string; description?: string; parameters?: Record<string, unknown> } }> | undefined {
++		if (!Array.isArray(tools) || tools.length === 0) {
++			return undefined;
++		}
++
++		const mapped = tools
++			.map(tool => {
++				const name = tool?.name;
++				if (!name) {
++					return undefined;
++				}
++				return {
++					type: 'function' as const,
++					function: {
++						name,
++						description: tool?.description,
++						parameters: tool?.input_schema
++					}
++				};
++			})
++			.filter(Boolean) as Array<{ type: 'function'; function: { name: string; description?: string; parameters?: Record<string, unknown> } }>;
++
++		return mapped.length ? mapped : undefined;
++	}
++
++	private mapClaudeToolChoice(toolChoice: any): unknown {
++		if (!toolChoice) {
++			return undefined;
++		}
++
++		if (typeof toolChoice === 'string') {
++			return toolChoice;
++		}
++
++		if (toolChoice?.type === 'tool' && toolChoice?.name) {
++			return { type: 'function', function: { name: toolChoice.name } };
++		}
++
++		return toolChoice;
++	}
++
++	private estimateClaudeTokens(payload: any): number {
++		const parts: string[] = [];
++		const systemText = this.normalizeClaudeContent(payload?.system);
++		if (systemText) {
++			parts.push(systemText);
++		}
++
++		for (const message of payload?.messages ?? []) {
++			const content = this.normalizeClaudeContent(message?.content);
++			if (content) {
++				parts.push(content);
++			}
++		}
++
++		const text = parts.join(' ');
++		if (!text) {
++			return 0;
++		}
++
++		return text.split(/\s+/).filter(Boolean).length;
++	}
++
++	private async handleClaudeResponse(
++		proxyRes: IncomingMessage,
++		res: ServerResponse,
++		config: DeployAIProxyConfig,
++		requestPayload?: any
++	): Promise<void> {
++		if ((proxyRes.statusCode ?? 200) >= 400) {
++			res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
++			await pipeline(proxyRes, res);
++			return;
++		}
++
++		const isStream = Boolean(requestPayload?.stream) || String(proxyRes.headers['content-type'] ?? '').includes('text/event-stream');
++
++		if (!isStream) {
++			const responseBody = await this.readResponseBody(proxyRes);
++			const openAIResponse = this.parseJson(responseBody.toString('utf-8'));
++			const claudeResponse = this.convertOpenAIToClaude(openAIResponse, config.model);
++			const payload = Buffer.from(JSON.stringify(claudeResponse));
++
++			res.writeHead(proxyRes.statusCode ?? 200, {
++				'content-type': 'application/json',
++				'content-length': String(payload.length)
++			});
++			res.end(payload);
++			return;
++		}
++
++		res.writeHead(200, {
++			'content-type': 'text/event-stream',
++			'cache-control': 'no-cache',
++			connection: 'keep-alive'
++		});
++
++		const sendEvent = (event: string, data: unknown): void => {
++			res.write(`event: ${event}\n`);
++			res.write(`data: ${JSON.stringify(data)}\n\n`);
++		};
++
++		const messageId = `msg_${Date.now()}_${Math.random().toString(16).slice(2)}`;
++		const model = config.model;
++
++		sendEvent('message_start', {
++			type: 'message_start',
++			message: {
++				id: messageId,
++				type: 'message',
++				role: 'assistant',
++				model,
++				content: [],
++				stop_reason: null,
++				stop_sequence: null,
++				usage: {
++					input_tokens: 0,
++					output_tokens: 0
++				}
++			}
++		});
++
++		let contentStarted = false;
++		let currentBlockType: 'text' | 'tool' | undefined;
++		let currentBlockIndex: number | undefined;
++		let nextContentIndex = 0;
++		let stopReason: string | null = null;
++		let streamError: any | undefined;
++		let finalUsage: { input_tokens: number; output_tokens: number; cache_read_input_tokens?: number } | undefined;
++		const toolCallIndexToBlockIndex = new Map<number, number>();
++		const toolCalls = new Map<number, { id: string; name: string; arguments: string }>();
++
++		await this.consumeOpenAIStream(proxyRes, (chunk) => {
++			if (chunk?.error) {
++				streamError = chunk.error;
++				return;
++			}
++			// this.logService.info(`DeployAI proxy SSE chunk: ${JSON.stringify(chunk)}`);
++			const choice = chunk?.choices?.[0];
++			if (chunk?.usage) {
++				finalUsage = {
++					input_tokens: (chunk.usage?.prompt_tokens || 0) - (chunk.usage?.prompt_tokens_details?.cached_tokens || 0),
++					output_tokens: chunk.usage?.completion_tokens || 0,
++					cache_read_input_tokens: chunk.usage?.prompt_tokens_details?.cached_tokens || 0
++				};
++			}
++			const deltaText = choice?.delta?.content;
++			const deltaToolCalls = choice?.delta?.tool_calls;
++			if (typeof deltaText === 'string' && deltaText.length > 0) {
++				if (!contentStarted || currentBlockType !== 'text') {
++					if (currentBlockIndex !== undefined) {
++						sendEvent('content_block_stop', { type: 'content_block_stop', index: currentBlockIndex });
++					}
++					contentStarted = true;
++					currentBlockType = 'text';
++					currentBlockIndex = nextContentIndex++;
++					sendEvent('content_block_start', {
++						type: 'content_block_start',
++						index: currentBlockIndex,
++						content_block: { type: 'text', text: '' }
++					});
++				}
++
++				sendEvent('content_block_delta', {
++					type: 'content_block_delta',
++					index: currentBlockIndex,
++					delta: { type: 'text_delta', text: deltaText }
++				});
++			}
++
++			if (Array.isArray(deltaToolCalls)) {
++				const processedInChunk = new Set<number>();
++				for (const toolCall of deltaToolCalls) {
++					const index = typeof toolCall?.index === 'number' ? toolCall.index : 0;
++					if (processedInChunk.has(index)) {
++						continue;
++					}
++					processedInChunk.add(index);
++
++					const existingBlock = toolCallIndexToBlockIndex.get(index);
++					const name = toolCall?.function?.name ?? toolCall?.name ?? toolCalls.get(index)?.name;
++					const id = toolCall?.id ?? toolCalls.get(index)?.id ?? `tool_${index}`;
++
++					if (existingBlock === undefined && name) {
++						if (currentBlockIndex !== undefined) {
++							sendEvent('content_block_stop', { type: 'content_block_stop', index: currentBlockIndex });
++						}
++						currentBlockType = 'tool';
++						currentBlockIndex = nextContentIndex++;
++						toolCallIndexToBlockIndex.set(index, currentBlockIndex);
++						toolCalls.set(index, { id, name, arguments: '' });
++
++						sendEvent('content_block_start', {
++							type: 'content_block_start',
++							index: currentBlockIndex,
++							content_block: { type: 'tool_use', id, name, input: {} }
++						});
++					} else if (name && id) {
++						toolCalls.set(index, { id, name, arguments: toolCalls.get(index)?.arguments ?? '' });
++					}
++
++					const argsPart = toolCall?.function?.arguments;
++					if (typeof argsPart === 'string' && argsPart.length > 0) {
++						const blockIndex = toolCallIndexToBlockIndex.get(index);
++						if (blockIndex === undefined) {
++							continue;
++						}
++						const toolState = toolCalls.get(index);
++						if (toolState) {
++							toolState.arguments += argsPart;
++						}
++						sendEvent('content_block_delta', {
++							type: 'content_block_delta',
++							index: blockIndex,
++							delta: { type: 'input_json_delta', partial_json: argsPart }
++						});
++					}
++				}
++			}
++
++			if (choice?.finish_reason) {
++				stopReason = this.mapFinishReason(choice.finish_reason);
++			}
++		});
++
++		if (streamError) {
++			sendEvent('error', { type: 'error', error: streamError });
++			res.end();
++			return;
++		}
++
++		if (currentBlockIndex !== undefined) {
++			sendEvent('content_block_stop', { type: 'content_block_stop', index: currentBlockIndex });
++		}
++
++		sendEvent('message_delta', {
++			type: 'message_delta',
++			delta: { stop_reason: stopReason ?? 'end_turn', stop_sequence: null },
++			usage: finalUsage ?? { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0 }
++		});
++		sendEvent('message_stop', { type: 'message_stop' });
++		res.end();
++	}
++
++	private async readResponseBody(res: IncomingMessage): Promise<Buffer> {
++		const chunks: Buffer[] = [];
++		for await (const chunk of res) {
++			chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
++		}
++		return Buffer.concat(chunks);
++	}
++
++	private convertOpenAIToClaude(payload: any, model: string): Record<string, unknown> {
++		const choice = payload?.choices?.[0];
++		const contentText = choice?.message?.content ?? '';
++		const toolCalls = choice?.message?.tool_calls ?? [];
++		const finishReason = choice?.finish_reason ? this.mapFinishReason(choice.finish_reason) : null;
++		const usage = payload?.usage ?? {};
++
++		const content: Array<{ type: string; [key: string]: unknown }> = [];
++		if (contentText) {
++			content.push({ type: 'text', text: contentText });
++		}
++		for (const toolCall of toolCalls) {
++			if (!toolCall?.function?.name) {
++				continue;
++			}
++			let parsedInput: unknown = {};
++			const args = toolCall?.function?.arguments;
++			if (typeof args === 'string') {
++				try {
++					parsedInput = JSON.parse(args);
++				} catch {
++					parsedInput = { text: args };
++				}
++			} else if (args) {
++				parsedInput = args;
++			}
++			content.push({
++				type: 'tool_use',
++				id: toolCall?.id ?? `tool_${Date.now()}`,
++				name: toolCall.function.name,
++				input: parsedInput
++			});
++		}
++
++		return {
++			id: payload?.id ?? `msg_${Date.now()}`,
++			type: 'message',
++			role: 'assistant',
++			model: model,
++			content,
++			stop_reason: finishReason,
++			stop_sequence: null,
++			usage: {
++				input_tokens: usage.prompt_tokens ?? 0,
++				output_tokens: usage.completion_tokens ?? 0
++			}
++		};
++	}
++
++	private async consumeOpenAIStream(res: IncomingMessage, onChunk: (chunk: any) => void): Promise<void> {
++		let buffer = '';
++		let dataLines: string[] = [];
++
++		for await (const chunk of res) {
++			buffer += chunk.toString('utf-8');
++			// this.logService.info(`DeployAI proxy SSE raw chunk: ${chunk.toString('utf-8')}`);
++			const lines = buffer.split(/\r?\n/);
++			buffer = lines.pop() ?? '';
++
++			for (const line of lines) {
++				if (line === '') {
++					if (dataLines.length > 0) {
++						const data = dataLines.join('\n');
++						dataLines = [];
++						if (data === '[DONE]') {
++							return;
++						}
++						onChunk(this.parseJson(data));
++					}
++					continue;
++				}
++
++				if (line.startsWith('data:')) {
++					dataLines.push(line.slice(5).trimStart());
++				} else if (line.startsWith('{') || line.startsWith('[')) {
++					dataLines.push(line);
++				}
++			}
++		}
++
++		if (dataLines.length > 0) {
++			const data = dataLines.join('\n');
++			if (data !== '[DONE]') {
++				onChunk(this.parseJson(data));
++			}
++		}
++	}
++
++	private mapFinishReason(reason: string): string {
++		switch (reason) {
++			case 'stop':
++				return 'end_turn';
++			case 'length':
++				return 'max_tokens';
++			case 'tool_calls':
++				return 'tool_use';
++			default:
++				return 'end_turn';
++		}
++	}
++}
 diff --git a/src/vs/platform/native/common/native.ts b/src/vs/platform/native/common/native.ts
 index 43729958372..745a9047341 100644
 --- a/src/vs/platform/native/common/native.ts
@@ -114,97 +1812,80 @@ index 43729958372..745a9047341 100644
 +	writeClaudeCodeRouterConfig(configJson: string): Promise<void>;
  }
 diff --git a/src/vs/platform/native/electron-main/nativeHostMainService.ts b/src/vs/platform/native/electron-main/nativeHostMainService.ts
-index 8cb60a057b8..53c3c0f5996 100644
+index 8cb60a057b8..d78a1a34695 100644
 --- a/src/vs/platform/native/electron-main/nativeHostMainService.ts
 +++ b/src/vs/platform/native/electron-main/nativeHostMainService.ts
-@@ -1155,2 +1155,89 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
+@@ -49,2 +49,7 @@ import { AuthInfo, Credentials, IRequestService } from '../../request/common/req
+ import { randomPath } from '../../../base/common/extpath.js';
++import * as Sentry from '@sentry/electron/main';
++import { IApplicationStorageMainService } from '../../storage/electron-main/storageMainService.js';
++import { StorageScope, StorageTarget } from '../../storage/common/storage.js';
++import { DeployAIProxyServer } from '../../deployai/electron-main/deployAIProxyServer.js';
++import { DEFAULT_DEPLOYAI_PROXY_PORT, DEPLOYAI_PROXY_CONFIG_STORAGE_KEY, DeployAIProxyConfig } from '../../deployai/common/deployaiProxyConfig.js';
+ 
+@@ -71,3 +76,4 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
+ 		@IProxyAuthService private readonly proxyAuthService: IProxyAuthService,
+-		@IInstantiationService private readonly instantiationService: IInstantiationService
++		@IInstantiationService private readonly instantiationService: IInstantiationService,
++		@IApplicationStorageMainService private readonly applicationStorageMainService: IApplicationStorageMainService
+ 	) {
+@@ -173,2 +179,4 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
+ 
++	private readonly deployAIProxyServer = this._register(new DeployAIProxyServer(this.logService));
++
+ 
+@@ -728,2 +736,3 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
+ 						this.logService.error(`[sudo-prompt] received stderr: ${stderr}`);
++						Sentry.captureMessage(`[sudo-prompt] received stderr: ${stderr}`, 'error');
+ 					}
+@@ -1155,2 +1164,49 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
  	}
 +
 +	async restartClaudeCodeRouterCli(): Promise<void> {
-+		// Get CLI path based on platform and appRoot
-+		let cliPath: string;
-+		if (isMacintosh) {
-+			// appRoot: /path/to/VSCodium.app/Contents/Resources/app
-+			// cli: /path/to/VSCodium.app/Contents/Resources/cli
-+			const resourcesPath = join(this.environmentMainService.appRoot, '..');
-+			cliPath = join(resourcesPath, 'cli');
-+		} else if (isWindows) {
-+			// appRoot: C:\\...\\VSCodium\\resources\\app
-+			// cli: C:\\...\\VSCodium\\resources\\cli.exe
-+			const resourcesPath = join(this.environmentMainService.appRoot, '..');
-+			cliPath = join(resourcesPath, 'cli.exe');
-+		} else {
-+			// Linux: appRoot: /usr/share/vscodium/resources/app
-+			// cli: /usr/share/vscodium/resources/cli
-+			const resourcesPath = join(this.environmentMainService.appRoot, '..');
-+			cliPath = join(resourcesPath, 'cli');
-+		}
++		await this.applicationStorageMainService.whenReady;
 +
-+		// Check if CLI exists
-+		if (!fs.existsSync(cliPath)) {
-+			this.logService.warn(`Claude Code Router CLI not found at: ${cliPath}`);
++		const configJson = this.applicationStorageMainService.get(DEPLOYAI_PROXY_CONFIG_STORAGE_KEY, StorageScope.APPLICATION);
++		if (!configJson) {
++			this.logService.warn('DeployAI proxy config is not set. Skipping proxy restart.');
 +			return;
 +		}
 +
-+		this.logService.info(`Restarting Claude Code Router CLI at: ${cliPath}`);
-+
-+		// Execute CLI restart command
++		let config: DeployAIProxyConfig;
 +		try {
-+			const { stdout, stderr } = await promisify(exec)(`"${cliPath}" restart`);
-+			if (stdout) {
-+				this.logService.info('Claude Code Router CLI restart stdout:', stdout.trim());
-+			}
-+			if (stderr) {
-+				this.logService.warn('Claude Code Router CLI restart stderr:', stderr.trim());
-+			}
-+			this.logService.info('Claude Code Router CLI restart command executed successfully');
++			config = JSON.parse(configJson) as DeployAIProxyConfig;
 +		} catch (error) {
-+			this.logService.error('Failed to restart Claude Code Router CLI:', error);
++			this.logService.error('DeployAI proxy config is invalid JSON:', error);
++			return;
 +		}
-+	}
 +
-+	private async getClaudeCodeRouterConfigPath(): Promise<string> {
-+		const userHome = this.environmentMainService.userHome.fsPath;
-+		if (isWindows) {
-+			return `${userHome}\\.claude-code-router\\config.json`;
++		try {
++			const preferredPort = config.port ?? DEFAULT_DEPLOYAI_PROXY_PORT;
++			const actualPort = await this.deployAIProxyServer.start(config, preferredPort);
++
++			if (actualPort !== config.port) {
++				const updatedConfig: DeployAIProxyConfig = { ...config, port: actualPort };
++				this.applicationStorageMainService.store(
++					DEPLOYAI_PROXY_CONFIG_STORAGE_KEY,
++					JSON.stringify(updatedConfig),
++					StorageScope.APPLICATION,
++					StorageTarget.USER
++				);
++			}
++		} catch (error) {
++			this.logService.error('Failed to start DeployAI proxy server:', error);
++			Sentry.captureException(error);
 +		}
-+		return `${userHome}/.claude-code-router/config.json`;
 +	}
 +
 +	async readClaudeCodeRouterConfig(_windowId: number | undefined): Promise<string | undefined> {
-+		try {
-+			const configPath = await this.getClaudeCodeRouterConfigPath();
-+			const content = await fs.promises.readFile(configPath, 'utf-8');
-+			this.logService.trace('Successfully read Claude Code Router config');
-+			return content;
-+		} catch (error) {
-+			if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-+				this.logService.trace('Claude Code Router config file does not exist');
-+				return undefined;
-+			}
-+			this.logService.error('Error reading Claude Code Router config:', error);
-+			throw error;
-+		}
++		await this.applicationStorageMainService.whenReady;
++		return this.applicationStorageMainService.get(DEPLOYAI_PROXY_CONFIG_STORAGE_KEY, StorageScope.APPLICATION);
 +	}
 +
 +	async writeClaudeCodeRouterConfig(_windowId: number | undefined, configJson: string): Promise<void> {
-+		try {
-+			const configPath = await this.getClaudeCodeRouterConfigPath();
-+			const configDir = dirname(configPath);
-+
-+			// Ensure directory exists
-+			await fs.promises.mkdir(configDir, { recursive: true });
-+
-+			// Write config file
-+			await fs.promises.writeFile(configPath, configJson, 'utf-8');
-+			this.logService.info('Successfully wrote Claude Code Router config');
-+
-+			// Restart CLI after config update
-+			await this.restartClaudeCodeRouterCli();
-+		} catch (error) {
-+			this.logService.error('Error writing Claude Code Router config:', error);
-+			throw error;
-+		}
++		await this.applicationStorageMainService.whenReady;
++		this.applicationStorageMainService.store(DEPLOYAI_PROXY_CONFIG_STORAGE_KEY, configJson, StorageScope.APPLICATION, StorageTarget.USER);
++		await this.restartClaudeCodeRouterCli();
 +	}
  }
 diff --git a/src/vs/workbench/browser/parts/titlebar/media/titlebarpart.css b/src/vs/workbench/browser/parts/titlebar/media/titlebarpart.css
@@ -447,7 +2128,7 @@ index f8e5e74bf6b..91bf15751f6 100644
 +});
 diff --git a/src/vs/workbench/common/deployai365.ts b/src/vs/workbench/common/deployai365.ts
 new file mode 100644
-index 00000000000..650260f8d06
+index 00000000000..5268d0abc03
 --- /dev/null
 +++ b/src/vs/workbench/common/deployai365.ts
 @@ -0,0 +1,28 @@
@@ -548,10 +2229,10 @@ index 00000000000..6adbf74df00
 +});
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..f08996ed5ca
+index 00000000000..5d10b1cc636
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
-@@ -0,0 +1,1154 @@
+@@ -0,0 +1,1131 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -573,6 +2254,7 @@ index 00000000000..f08996ed5ca
 +import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
 +import { IHostService } from '../../../services/host/browser/host.js';
 +import { MODELPROXY_API_ENDPOINT, SUB_KEY_STORAGE_KEY, CUSTOM_MODEL_NAME_KEY, CUSTOM_BASE_URL_KEY, CUSTOM_API_KEY_KEY, USE_CUSTOM_MODEL_KEY, SELECTED_MODEL_KEY, ENABLE_CUSTOM_MODEL_KEY, USE_CLAUDE_ACCOUNT_LOGIN_KEY } from '../../../common/deployai365.js';
++import { DeployAIProxyConfig } from '../../../../platform/deployai/common/deployaiProxyConfig.js';
 +import { IWorkbenchThemeService, ThemeSettingDefaults } from '../../../services/themes/common/workbenchThemeService.js';
 +import { ColorScheme } from '../../../../platform/theme/common/theme.js';
 +import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
@@ -1404,46 +3086,32 @@ index 00000000000..f08996ed5ca
 +
 +	private async updateConfigFile(modelId: string): Promise<void> {
 +		try {
-+			// Read current config
 +			const configJson = await this.hostService.readClaudeCodeRouterConfig();
-+			let config: any;
-+
++			let existingConfig: DeployAIProxyConfig | undefined;
 +			if (configJson) {
-+				config = JSON.parse(configJson);
-+			} else {
-+				// Create default config if not exists
-+				config = { Providers: [{ models: [] }], Router: {} };
++				try {
++					existingConfig = JSON.parse(configJson) as DeployAIProxyConfig;
++				} catch (error) {
++					console.error('Invalid DeployAI proxy config JSON, overwriting:', error);
++				}
 +			}
 +
-+			// Ensure config structure exists
-+			if (!config.Providers) {
-+				config.Providers = [];
-+			}
-+			if (!config.Providers[0]) {
-+				config.Providers[0] = {};
-+			}
-+			if (!config.Providers[0].models) {
-+				config.Providers[0].models = [];
-+			}
-+
-+			// Update models array
-+			config.Providers[0].models = [modelId];
-+			config.Providers[0].api_base_url = MODELPROXY_API_ENDPOINT;
 +			const apiKey = this.storageService.get(SUB_KEY_STORAGE_KEY, StorageScope.APPLICATION, '');
-+			config.Providers[0].api_key = apiKey;
-+			config.Providers[0].name = 'deployai';
-+
-+			// Update Router
-+			config.Router = {
-+				default: `deployai,${modelId}`
++			const nextConfig: DeployAIProxyConfig = {
++				version: 1,
++				mode: 'modelproxy',
++				endpoint: MODELPROXY_API_ENDPOINT,
++				model: modelId,
++				apiKey,
++				headers: existingConfig?.headers,
++				port: existingConfig?.port
 +			};
 +
-+			// Write config back
-+			await this.hostService.writeClaudeCodeRouterConfig(JSON.stringify(config, null, 2));
++			await this.hostService.writeClaudeCodeRouterConfig(JSON.stringify(nextConfig, null, 2));
 +
-+			console.log('Config file updated successfully with model:', modelId);
++			console.log('Proxy config updated successfully with model:', modelId);
 +		} catch (error) {
-+			console.error('Error updating config file:', error);
++			console.error('Error updating proxy config:', error);
 +		}
 +	}
 +
@@ -1507,31 +3175,26 @@ index 00000000000..f08996ed5ca
 +
 +			// Connection successful, save configuration
 +			const configJson = await this.hostService.readClaudeCodeRouterConfig();
-+			let config: any;
-+
++			let existingConfig: DeployAIProxyConfig | undefined;
 +			if (configJson) {
-+				config = JSON.parse(configJson);
-+			} else {
-+				config = { Providers: [{}], Router: {} };
++				try {
++					existingConfig = JSON.parse(configJson) as DeployAIProxyConfig;
++				} catch (error) {
++					console.error('Invalid DeployAI proxy config JSON, overwriting:', error);
++				}
 +			}
 +
-+			if (!config.Providers) {
-+				config.Providers = [];
-+			}
-+			if (!config.Providers[0]) {
-+				config.Providers[0] = {};
-+			}
-+
-+			config.Providers[0].api_base_url = baseUrl;
-+			config.Providers[0].api_key = apiKey;
-+			config.Providers[0].models = [modelName];
-+			config.Providers[0].name = 'deployai';
-+
-+			config.Router = {
-+				default: `deployai,${modelName}`
++			const nextConfig: DeployAIProxyConfig = {
++				version: 1,
++				mode: 'custom',
++				endpoint: baseUrl,
++				model: modelName,
++				apiKey,
++				headers: existingConfig?.headers,
++				port: existingConfig?.port
 +			};
 +
-+			await this.hostService.writeClaudeCodeRouterConfig(JSON.stringify(config, null, 2));
++			await this.hostService.writeClaudeCodeRouterConfig(JSON.stringify(nextConfig, null, 2));
 +
 +			// Save to storage
 +			this.storageService.store(CUSTOM_MODEL_NAME_KEY, modelName, StorageScope.APPLICATION, StorageTarget.MACHINE);
@@ -1608,31 +3271,26 @@ index 00000000000..f08996ed5ca
 +
 +		try {
 +			const configJson = await this.hostService.readClaudeCodeRouterConfig();
-+			let config: any;
-+
++			let existingConfig: DeployAIProxyConfig | undefined;
 +			if (configJson) {
-+				config = JSON.parse(configJson);
-+			} else {
-+				config = { Providers: [{}], Router: {} };
++				try {
++					existingConfig = JSON.parse(configJson) as DeployAIProxyConfig;
++				} catch (error) {
++					console.error('Invalid DeployAI proxy config JSON, overwriting:', error);
++				}
 +			}
 +
-+			if (!config.Providers) {
-+				config.Providers = [];
-+			}
-+			if (!config.Providers[0]) {
-+				config.Providers[0] = {};
-+			}
-+
-+			config.Providers[0].api_base_url = baseUrl;
-+			config.Providers[0].api_key = apiKey;
-+			config.Providers[0].models = [modelName];
-+			config.Providers[0].name = 'deployai';
-+
-+			config.Router = {
-+				default: `deployai,${modelName}`
++			const nextConfig: DeployAIProxyConfig = {
++				version: 1,
++				mode: 'custom',
++				endpoint: baseUrl,
++				model: modelName,
++				apiKey,
++				headers: existingConfig?.headers,
++				port: existingConfig?.port
 +			};
 +
-+			await this.hostService.writeClaudeCodeRouterConfig(JSON.stringify(config, null, 2));
++			await this.hostService.writeClaudeCodeRouterConfig(JSON.stringify(nextConfig, null, 2));
 +
 +			// Save to storage
 +			this.storageService.store(CUSTOM_MODEL_NAME_KEY, modelName, StorageScope.APPLICATION, StorageTarget.MACHINE);
@@ -1777,10 +3435,10 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..9c084a26ba9
+index 00000000000..3a6f9a0b8de
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,1317 @@
+@@ -0,0 +1,1304 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -1806,16 +3464,14 @@ index 00000000000..9c084a26ba9
 +	EventType,
 +	getWindow,
 +} from '../../../../base/browser/dom.js';
-+import { IFileService } from '../../../../platform/files/common/files.js';
-+import { VSBuffer } from '../../../../base/common/buffer.js';
-+import { IPathService } from '../../../services/path/common/pathService.js';
-+import { isWindows, Language } from '../../../../base/common/platform.js';
++import { Language } from '../../../../base/common/platform.js';
 +import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 +import { IHostService } from '../../../services/host/browser/host.js';
 +import { IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
-+import { INSTANCE_ID, TOKEN_STORAGE_KEY, SUB_KEY_STORAGE_KEY, BALANCE_STORAGE_KEY, CALLBACK_SCHEME, CALLBACK_AUTHORITY, CALLBACK_PATH, USER_INFO_API, API_ENDPOINT, USE_CUSTOM_MODEL_KEY, ENABLE_CUSTOM_MODEL_KEY } from '../../../common/deployai365.js';
++import { INSTANCE_ID, TOKEN_STORAGE_KEY, SUB_KEY_STORAGE_KEY, BALANCE_STORAGE_KEY, CALLBACK_SCHEME, CALLBACK_AUTHORITY, CALLBACK_PATH, USER_INFO_API, API_ENDPOINT, USE_CUSTOM_MODEL_KEY, ENABLE_CUSTOM_MODEL_KEY, SELECTED_MODEL_KEY, MODELPROXY_API_ENDPOINT } from '../../../common/deployai365.js';
 +import { ILocaleService } from '../../../services/localization/common/locale.js';
 +import { localize2 } from '../../../../nls.js';
++import { DeployAIProxyConfig, DEPLOYAI_PROXY_CONFIG_STORAGE_KEY } from '../../../../platform/deployai/common/deployaiProxyConfig.js';
 +
 +const IsLowBalanceContext = new RawContextKey<boolean>('isLowBalance', false);
 +const IsLoggedInContext = new RawContextKey<boolean>('isLoggedIn', false);
@@ -1895,8 +3551,6 @@ index 00000000000..9c084a26ba9
 +		@IStorageService private readonly storageService: IStorageService,
 +		@IOpenerService private readonly openerService: IOpenerService,
 +		@IURLService private readonly urlService: IURLService,
-+		@IFileService private readonly fileService: IFileService,
-+		@IPathService private readonly pathService: IPathService,
 +		@IDialogService private readonly dialogService: IDialogService,
 +		@IHostService private readonly hostService: IHostService,
 +		@IContextKeyService contextKeyService: IContextKeyService,
@@ -2676,47 +4330,38 @@ index 00000000000..9c084a26ba9
 +
 +	private async updateConfigFile(subKey: string): Promise<void> {
 +		try {
-+			const configPath = await this.getConfigPath();
-+			let config: any = { Providers: [{ api_key: '' }] };
-+
-+			try {
-+				const content = await this.fileService.readFile(
-+					URI.file(configPath)
-+				);
-+				config = JSON.parse(content.value.toString());
-+			} catch (e) {
-+				// File doesn't exist yet, use default config
++			const configJson = this.storageService.get(DEPLOYAI_PROXY_CONFIG_STORAGE_KEY, StorageScope.APPLICATION);
++			let existingConfig: DeployAIProxyConfig | undefined;
++			if (configJson) {
++				try {
++					existingConfig = JSON.parse(configJson) as DeployAIProxyConfig;
++				} catch (error) {
++					console.error('Invalid DeployAI proxy config JSON, overwriting:', error);
++				}
 +			}
 +
-+			if (!config.Providers) {
-+				config.Providers = [];
-+			}
-+			if (!config.Providers[0]) {
-+				config.Providers[0] = {};
-+			}
++			const selectedModel = this.storageService.get(SELECTED_MODEL_KEY, StorageScope.APPLICATION) ?? 'anthropic/claude-sonnet-4.5';
++			const nextConfig: DeployAIProxyConfig = {
++				version: 1,
++				mode: existingConfig?.mode ?? 'modelproxy',
++				endpoint: existingConfig?.endpoint ?? MODELPROXY_API_ENDPOINT,
++				model: existingConfig?.model ?? selectedModel,
++				apiKey: subKey,
++				headers: existingConfig?.headers,
++				port: existingConfig?.port
++			};
 +
-+			config.Providers[0].api_key = subKey;
-+
-+			const content = VSBuffer.fromString(
-+				JSON.stringify(config, null, 2)
++			this.storageService.store(
++				DEPLOYAI_PROXY_CONFIG_STORAGE_KEY,
++				JSON.stringify(nextConfig, null, 2),
++				StorageScope.APPLICATION,
++				StorageTarget.USER
 +			);
-+			await this.fileService.writeFile(URI.file(configPath), content);
-+			console.log('Config file updated successfully');
 +
-+			// Restart Claude Code Router CLI
-+			// await this.hostService.restartClaudeCodeRouterCli();
++			console.log('Proxy config updated successfully');
 +		} catch (error) {
-+			console.error('Error updating config file:', error);
++			console.error('Error updating proxy config:', error);
 +		}
-+	}
-+
-+	private async getConfigPath(): Promise<string> {
-+		const userHome = await this.pathService.userHome();
-+		const homedir = userHome.fsPath;
-+		if (isWindows) {
-+			return `${homedir}\\.claude-code-router\\config.json`;
-+		}
-+		return `${homedir}/.claude-code-router/config.json`;
 +	}
 +
 +	private applyStyles(): void {
@@ -3099,10 +4744,21 @@ index 00000000000..9c084a26ba9
 +	return currentBalanceInstance?.getTotalAmount();
 +}
 diff --git a/src/vs/workbench/services/host/browser/browserHostService.ts b/src/vs/workbench/services/host/browser/browserHostService.ts
-index f7acdcc4d1a..a56cf9faa6e 100644
+index f7acdcc4d1a..e6ef5f0b463 100644
 --- a/src/vs/workbench/services/host/browser/browserHostService.ts
 +++ b/src/vs/workbench/services/host/browser/browserHostService.ts
-@@ -681,2 +681,18 @@ export class BrowserHostService extends Disposable implements IHostService {
+@@ -40,2 +40,4 @@ import { coalesce } from '../../../../base/common/arrays.js';
+ import { mainWindow, isAuxiliaryWindow } from '../../../../base/browser/window.js';
++import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
++import { DEPLOYAI_PROXY_CONFIG_STORAGE_KEY } from '../../../../platform/deployai/common/deployaiProxyConfig.js';
+ import { isIOS, isMacintosh } from '../../../../base/common/platform.js';
+@@ -83,3 +85,4 @@ export class BrowserHostService extends Disposable implements IHostService {
+ 		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
+-		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService
++		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService,
++		@IStorageService private readonly storageService: IStorageService
+ 	) {
+@@ -681,2 +684,17 @@ export class BrowserHostService extends Disposable implements IHostService {
  	//#endregion
 +
 +	//#region Claude Code Router CLI
@@ -3112,11 +4768,10 @@ index f7acdcc4d1a..a56cf9faa6e 100644
 +	}
 +
 +	async readClaudeCodeRouterConfig(): Promise<string | undefined> {
-+		// Not supported in browser environment
-+		return undefined;
++		return this.storageService.get(DEPLOYAI_PROXY_CONFIG_STORAGE_KEY, StorageScope.APPLICATION);
 +	}
 +	async writeClaudeCodeRouterConfig(_config: string): Promise<void> {
-+		// Not supported in browser environment
++		this.storageService.store(DEPLOYAI_PROXY_CONFIG_STORAGE_KEY, _config, StorageScope.APPLICATION, StorageTarget.USER);
 +	}
 +
 +	//#endregion
