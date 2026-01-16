@@ -28,6 +28,7 @@ fi
 
 APP_DIR="${BUILD_DIR}/VSCode-win32-${WIN_ARCH}"
 RESOURCES_DIR="${APP_DIR}/resources"
+GIT_BASH_DIR="${RESOURCES_DIR}/bin/git-bash"
 
 # Download and package Git Bash
 echo "Downloading Git Bash Portable..."
