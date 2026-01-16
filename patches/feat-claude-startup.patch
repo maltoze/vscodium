@@ -1,5 +1,5 @@
 diff --git a/eslint.config.js b/eslint.config.js
-index 127bb34621f..1ad253fb189 100644
+index 127bb34..1ad253f 100644
 --- a/eslint.config.js
 +++ b/eslint.config.js
 @@ -804,2 +804,3 @@ export default tseslint.config(
@@ -7,7 +7,7 @@ index 127bb34621f..1ad253fb189 100644
 +						'@sentry/electron/main',
  						'assert',
 diff --git a/package-lock.json b/package-lock.json
-index 6337a215285..5fbefa39593 100644
+index 6337a21..5fbefa3 100644
 --- a/package-lock.json
 +++ b/package-lock.json
 @@ -15,2 +15,3 @@
@@ -984,7 +984,7 @@ index 6337a215285..5fbefa39593 100644
 -      "dev": true,
        "engines": {
 diff --git a/package.json b/package.json
-index c758b5231af..54eff300eb3 100644
+index c758b52..54eff30 100644
 --- a/package.json
 +++ b/package.json
 @@ -76,2 +76,3 @@
@@ -992,7 +992,7 @@ index c758b5231af..54eff300eb3 100644
 +    "@sentry/electron": "^7.5.0",
      "@types/semver": "^7.5.8",
 diff --git a/src/main.ts b/src/main.ts
-index deba4c449cf..2bda4d34692 100644
+index deba4c4..2bda4d3 100644
 --- a/src/main.ts
 +++ b/src/main.ts
 @@ -21,2 +21,3 @@ import { INLSConfiguration } from './vs/nls.js';
@@ -1001,7 +1001,7 @@ index deba4c449cf..2bda4d34692 100644
  
 diff --git a/src/sentry.js b/src/sentry.js
 new file mode 100644
-index 00000000000..0a0717c8441
+index 0000000..0a0717c
 --- /dev/null
 +++ b/src/sentry.js
 @@ -0,0 +1,10 @@
@@ -1017,7 +1017,7 @@ index 00000000000..0a0717c8441
 +});
 diff --git a/src/vs/code/electron-main/cliStopHandler.ts b/src/vs/code/electron-main/cliStopHandler.ts
 new file mode 100644
-index 00000000000..1702b4dc784
+index 0000000..1702b4d
 --- /dev/null
 +++ b/src/vs/code/electron-main/cliStopHandler.ts
 @@ -0,0 +1,82 @@
@@ -1104,7 +1104,7 @@ index 00000000000..1702b4dc784
 +	}
 +}
 diff --git a/src/vs/code/electron-main/main.ts b/src/vs/code/electron-main/main.ts
-index fb06a689254..5b95642a971 100644
+index fb06a68..5b95642 100644
 --- a/src/vs/code/electron-main/main.ts
 +++ b/src/vs/code/electron-main/main.ts
 @@ -75,2 +75,3 @@ import { addUNCHostToAllowlist, getUNCHost } from '../../base/node/unc.js';
@@ -1120,7 +1120,7 @@ index fb06a689254..5b95642a971 100644
  				});
 diff --git a/src/vs/platform/deployai/common/deployaiProxyConfig.ts b/src/vs/platform/deployai/common/deployaiProxyConfig.ts
 new file mode 100644
-index 00000000000..52220945af9
+index 0000000..5222094
 --- /dev/null
 +++ b/src/vs/platform/deployai/common/deployaiProxyConfig.ts
 @@ -0,0 +1,19 @@
@@ -1145,7 +1145,7 @@ index 00000000000..52220945af9
 +}
 diff --git a/src/vs/platform/deployai/electron-main/deployAIProxyServer.ts b/src/vs/platform/deployai/electron-main/deployAIProxyServer.ts
 new file mode 100644
-index 00000000000..87302f7a347
+index 0000000..87302f7
 --- /dev/null
 +++ b/src/vs/platform/deployai/electron-main/deployAIProxyServer.ts
 @@ -0,0 +1,650 @@
@@ -1800,7 +1800,7 @@ index 00000000000..87302f7a347
 +	}
 +}
 diff --git a/src/vs/platform/native/common/native.ts b/src/vs/platform/native/common/native.ts
-index 43729958372..745a9047341 100644
+index 4372995..745a904 100644
 --- a/src/vs/platform/native/common/native.ts
 +++ b/src/vs/platform/native/common/native.ts
 @@ -231,2 +231,7 @@ export interface ICommonNativeHostService {
@@ -1812,7 +1812,7 @@ index 43729958372..745a9047341 100644
 +	writeClaudeCodeRouterConfig(configJson: string): Promise<void>;
  }
 diff --git a/src/vs/platform/native/electron-main/nativeHostMainService.ts b/src/vs/platform/native/electron-main/nativeHostMainService.ts
-index 8cb60a057b8..d78a1a34695 100644
+index 8cb60a0..d78a1a3 100644
 --- a/src/vs/platform/native/electron-main/nativeHostMainService.ts
 +++ b/src/vs/platform/native/electron-main/nativeHostMainService.ts
 @@ -49,2 +49,7 @@ import { AuthInfo, Credentials, IRequestService } from '../../request/common/req
@@ -1889,7 +1889,7 @@ index 8cb60a057b8..d78a1a34695 100644
 +	}
  }
 diff --git a/src/vs/workbench/browser/parts/titlebar/media/titlebarpart.css b/src/vs/workbench/browser/parts/titlebar/media/titlebarpart.css
-index 0246cd2ad10..16174d3a4d8 100644
+index 0246cd2..16174d3 100644
 --- a/src/vs/workbench/browser/parts/titlebar/media/titlebarpart.css
 +++ b/src/vs/workbench/browser/parts/titlebar/media/titlebarpart.css
 @@ -467 +467,35 @@
@@ -1929,7 +1929,7 @@ index 0246cd2ad10..16174d3a4d8 100644
 +	background-color: rgba(127, 127, 127, 0.3) !important;
 +}
 diff --git a/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts b/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts
-index f8e5e74bf6b..91bf15751f6 100644
+index f8e5e74..91bf157 100644
 --- a/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts
 +++ b/src/vs/workbench/browser/parts/titlebar/titlebarActions.ts
 @@ -7,6 +7,6 @@ import { ILocalizedString, localize, localize2 } from '../../../../nls.js';
@@ -2128,7 +2128,7 @@ index f8e5e74bf6b..91bf15751f6 100644
 +});
 diff --git a/src/vs/workbench/common/deployai365.ts b/src/vs/workbench/common/deployai365.ts
 new file mode 100644
-index 00000000000..5268d0abc03
+index 0000000..650260f
 --- /dev/null
 +++ b/src/vs/workbench/common/deployai365.ts
 @@ -0,0 +1,28 @@
@@ -2162,7 +2162,7 @@ index 00000000000..5268d0abc03
 +export const USE_CLAUDE_ACCOUNT_LOGIN_KEY = 'deployai.useClaudeAccountLogin';
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts
 new file mode 100644
-index 00000000000..6adbf74df00
+index 0000000..6adbf74
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettings.contribution.ts
 @@ -0,0 +1,61 @@
@@ -2229,7 +2229,7 @@ index 00000000000..6adbf74df00
 +});
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 new file mode 100644
-index 00000000000..5d10b1cc636
+index 0000000..5d10b1c
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsEditor.ts
 @@ -0,0 +1,1131 @@
@@ -3366,7 +3366,7 @@ index 00000000000..5d10b1cc636
 +}
 diff --git a/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsInput.ts b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsInput.ts
 new file mode 100644
-index 00000000000..c03ebc78d91
+index 0000000..c03ebc7
 --- /dev/null
 +++ b/src/vs/workbench/contrib/deployaiSettings/browser/deployaiSettingsInput.ts
 @@ -0,0 +1,29 @@
@@ -3401,7 +3401,7 @@ index 00000000000..c03ebc78d91
 +}
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.contribution.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.contribution.ts
 new file mode 100644
-index 00000000000..5d848074744
+index 0000000..5d84807
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.contribution.ts
 @@ -0,0 +1,28 @@
@@ -3435,10 +3435,10 @@ index 00000000000..5d848074744
 +});
 diff --git a/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
 new file mode 100644
-index 00000000000..3a6f9a0b8de
+index 0000000..2dab50c
 --- /dev/null
 +++ b/src/vs/workbench/contrib/startupSplash/browser/startupSplash.ts
-@@ -0,0 +1,1304 @@
+@@ -0,0 +1,1305 @@
 +/*---------------------------------------------------------------------------------------------
 + *  Copyright (c) Microsoft Corporation. All rights reserved.
 + *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -3580,7 +3580,6 @@ index 00000000000..3a6f9a0b8de
 +				this.userName = userInfo.userName;
 +				this.totalAmount = userInfo.totalAmount;
 +				await this.fetchAndSaveSubKey(token);
-+				this.hostService.restartClaudeCodeRouterCli();
 +				this.startBalanceCheck();
 +				return;
 +			}
@@ -4358,6 +4357,8 @@ index 00000000000..3a6f9a0b8de
 +				StorageTarget.USER
 +			);
 +
++			this.hostService.restartClaudeCodeRouterCli();
++
 +			console.log('Proxy config updated successfully');
 +		} catch (error) {
 +			console.error('Error updating proxy config:', error);
@@ -4744,7 +4745,7 @@ index 00000000000..3a6f9a0b8de
 +	return currentBalanceInstance?.getTotalAmount();
 +}
 diff --git a/src/vs/workbench/services/host/browser/browserHostService.ts b/src/vs/workbench/services/host/browser/browserHostService.ts
-index f7acdcc4d1a..e6ef5f0b463 100644
+index f7acdcc..e6ef5f0 100644
 --- a/src/vs/workbench/services/host/browser/browserHostService.ts
 +++ b/src/vs/workbench/services/host/browser/browserHostService.ts
 @@ -40,2 +40,4 @@ import { coalesce } from '../../../../base/common/arrays.js';
@@ -4777,7 +4778,7 @@ index f7acdcc4d1a..e6ef5f0b463 100644
 +	//#endregion
  }
 diff --git a/src/vs/workbench/services/host/browser/host.ts b/src/vs/workbench/services/host/browser/host.ts
-index f83c4b79e84..1039fba92b4 100644
+index f83c4b7..1039fba 100644
 --- a/src/vs/workbench/services/host/browser/host.ts
 +++ b/src/vs/workbench/services/host/browser/host.ts
 @@ -139,2 +139,15 @@ export interface IHostService {
@@ -4797,7 +4798,7 @@ index f83c4b79e84..1039fba92b4 100644
 +	//#endregion
  }
 diff --git a/src/vs/workbench/services/host/electron-browser/nativeHostService.ts b/src/vs/workbench/services/host/electron-browser/nativeHostService.ts
-index cb7dcc810e2..8d6b3ebeb10 100644
+index cb7dcc8..8d6b3eb 100644
 --- a/src/vs/workbench/services/host/electron-browser/nativeHostService.ts
 +++ b/src/vs/workbench/services/host/electron-browser/nativeHostService.ts
 @@ -212,2 +212,16 @@ class WorkbenchHostService extends Disposable implements IHostService {
@@ -4818,7 +4819,7 @@ index cb7dcc810e2..8d6b3ebeb10 100644
 +	//#endregion
  }
 diff --git a/src/vs/workbench/test/browser/workbenchTestServices.ts b/src/vs/workbench/test/browser/workbenchTestServices.ts
-index 112726da453..7ebbdbd1b6a 100644
+index 112726d..7ebbdbd 100644
 --- a/src/vs/workbench/test/browser/workbenchTestServices.ts
 +++ b/src/vs/workbench/test/browser/workbenchTestServices.ts
 @@ -1435,2 +1435,8 @@ export class TestHostService implements IHostService {
@@ -4831,7 +4832,7 @@ index 112726da453..7ebbdbd1b6a 100644
 +
  	readonly colorScheme = ColorScheme.DARK;
 diff --git a/src/vs/workbench/test/electron-browser/workbenchTestServices.ts b/src/vs/workbench/test/electron-browser/workbenchTestServices.ts
-index 97bce2f41bc..219a540896e 100644
+index 97bce2f..219a540 100644
 --- a/src/vs/workbench/test/electron-browser/workbenchTestServices.ts
 +++ b/src/vs/workbench/test/electron-browser/workbenchTestServices.ts
 @@ -174,2 +174,5 @@ export class TestNativeHostService implements INativeHostService {
@@ -4841,7 +4842,7 @@ index 97bce2f41bc..219a540896e 100644
 +	async writeClaudeCodeRouterConfig(configJson: string): Promise<void> { }
  }
 diff --git a/src/vs/workbench/workbench.common.main.ts b/src/vs/workbench/workbench.common.main.ts
-index 61d63db7b73..6d6ef004bb7 100644
+index 61d63db..6d6ef00 100644
 --- a/src/vs/workbench/workbench.common.main.ts
 +++ b/src/vs/workbench/workbench.common.main.ts
 @@ -426,2 +426,5 @@ import './contrib/editTelemetry/browser/editTelemetry.contribution.js';
@@ -4851,7 +4852,7 @@ index 61d63db7b73..6d6ef004bb7 100644
 +
  
 diff --git a/src/vs/workbench/workbench.desktop.main.ts b/src/vs/workbench/workbench.desktop.main.ts
-index c1d9dc494ce..18ae6a2d9db 100644
+index c1d9dc4..18ae6a2 100644
 --- a/src/vs/workbench/workbench.desktop.main.ts
 +++ b/src/vs/workbench/workbench.desktop.main.ts
 @@ -184,2 +184,5 @@ import './contrib/mcp/electron-browser/mcp.contribution.js';
